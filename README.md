@@ -65,3 +65,13 @@ document.getElementById('debug').classList.remove('hidden') // t / кадр / р
 ## Что сделано кодом, а не графикой
 
 Волны вокруг антенны, тросы аэростата, боке-точки дата-центра, плашки и выноски, логотип при зуме на куртку/стену, затемнения и дефокус, зерно.
+
+## Деплой (mts.my-site.space)
+
+Продакшен — статическая сборка за nginx в docker compose на сервере (Traefik выдаёт HTTPS через Let's Encrypt). Сборка делается локально, на сервер уезжает только `dist/`:
+
+```bash
+./deploy/deploy.sh
+```
+
+Скрипт собирает проект, синхронизирует `dist/`, `deploy/Dockerfile` и `deploy/nginx.conf` в `/srv/app/mts` и пересобирает сервис `mts` в `/srv/app/docker-compose.yml`.

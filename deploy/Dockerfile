@@ -1,0 +1,7 @@
+# Продакшен-образ: статическая сборка Astro (dist/) за nginx.
+# Сборка делается локально (`npm run build`), в образ попадает только dist — на сервере не нужны node и sharp.
+FROM nginx:1.27-alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
