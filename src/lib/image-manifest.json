@@ -1,0 +1,380 @@
+{
+  "s1-bg": {
+    "width": 4438,
+    "height": 2496,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 4096,
+        "height": 2304,
+        "bytes": 619670
+      },
+      "md": {
+        "width": 2048,
+        "height": 1152,
+        "bytes": 220846
+      }
+    }
+  },
+  "s1-dish": {
+    "width": 232,
+    "height": 368,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 232,
+        "height": 368,
+        "bytes": 10640
+      },
+      "md": {
+        "width": 232,
+        "height": 368,
+        "bytes": 10310
+      }
+    }
+  },
+  "s1-cabinet": {
+    "width": 493,
+    "height": 2409,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 493,
+        "height": 2409,
+        "bytes": 9182
+      },
+      "md": {
+        "width": 493,
+        "height": 2409,
+        "bytes": 8640
+      }
+    }
+  },
+  "s1-fg": {
+    "width": 1048,
+    "height": 317,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 1048,
+        "height": 317,
+        "bytes": 41908
+      },
+      "md": {
+        "width": 1048,
+        "height": 317,
+        "bytes": 40958
+      }
+    }
+  },
+  "airship": {
+    "width": 1440,
+    "height": 1092,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 1440,
+        "height": 1092,
+        "bytes": 49402
+      },
+      "md": {
+        "width": 1440,
+        "height": 1092,
+        "bytes": 47196
+      }
+    }
+  },
+  "s2-field": {
+    "width": 4437,
+    "height": 2496,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 4096,
+        "height": 2304,
+        "bytes": 263874
+      },
+      "md": {
+        "width": 2048,
+        "height": 1152,
+        "bytes": 85526
+      }
+    }
+  },
+  "s3-bg": {
+    "width": 2752,
+    "height": 1536,
+    "alpha": false,
+    "sizes": {
+      "xl": {
+        "width": 2752,
+        "height": 1536,
+        "bytes": 223028
+      },
+      "md": {
+        "width": 2048,
+        "height": 1143,
+        "bytes": 138024
+      }
+    }
+  },
+  "s3-model": {
+    "width": 1440,
+    "height": 1092,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 1440,
+        "height": 1092,
+        "bytes": 49402
+      },
+      "md": {
+        "width": 1440,
+        "height": 1092,
+        "bytes": 47196
+      }
+    }
+  },
+  "s4-bg": {
+    "width": 1672,
+    "height": 941,
+    "alpha": false,
+    "sizes": {
+      "xl": {
+        "width": 1672,
+        "height": 941,
+        "bytes": 143260
+      },
+      "md": {
+        "width": 1672,
+        "height": 941,
+        "bytes": 132430
+      }
+    }
+  },
+  "s4-rack": {
+    "width": 376,
+    "height": 936,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 376,
+        "height": 936,
+        "bytes": 18132
+      },
+      "md": {
+        "width": 376,
+        "height": 936,
+        "bytes": 17182
+      }
+    }
+  },
+  "s4-tech": {
+    "width": 4437,
+    "height": 2496,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 4096,
+        "height": 2304,
+        "bytes": 173854
+      },
+      "md": {
+        "width": 2048,
+        "height": 1152,
+        "bytes": 74404
+      }
+    }
+  },
+  "s5-office": {
+    "width": 2752,
+    "height": 1536,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 2752,
+        "height": 1536,
+        "bytes": 224670
+      },
+      "md": {
+        "width": 2048,
+        "height": 1143,
+        "bytes": 143270
+      }
+    }
+  },
+  "s5-window": {
+    "width": 2817,
+    "height": 1683,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 2817,
+        "height": 1683,
+        "bytes": 139980
+      },
+      "md": {
+        "width": 2048,
+        "height": 1224,
+        "bytes": 89284
+      }
+    }
+  },
+  "s5-plant": {
+    "width": 492,
+    "height": 592,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 492,
+        "height": 592,
+        "bytes": 24286
+      },
+      "md": {
+        "width": 492,
+        "height": 592,
+        "bytes": 23018
+      }
+    }
+  },
+  "s6-city": {
+    "width": 4437,
+    "height": 2496,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 4096,
+        "height": 2304,
+        "bytes": 716072
+      },
+      "md": {
+        "width": 2048,
+        "height": 1152,
+        "bytes": 264976
+      }
+    }
+  },
+  "s7-room": {
+    "width": 2752,
+    "height": 1536,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 2752,
+        "height": 1536,
+        "bytes": 256842
+      },
+      "md": {
+        "width": 2048,
+        "height": 1143,
+        "bytes": 155428
+      }
+    }
+  },
+  "s7-view": {
+    "width": 1664,
+    "height": 1056,
+    "alpha": false,
+    "sizes": {
+      "xl": {
+        "width": 1664,
+        "height": 1056,
+        "bytes": 285940
+      },
+      "md": {
+        "width": 1664,
+        "height": 1056,
+        "bytes": 267120
+      }
+    }
+  },
+  "s7-fg": {
+    "width": 602,
+    "height": 902,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 602,
+        "height": 902,
+        "bytes": 64424
+      },
+      "md": {
+        "width": 602,
+        "height": 902,
+        "bytes": 61812
+      }
+    }
+  },
+  "about-trophy": {
+    "width": 1920,
+    "height": 1080,
+    "alpha": true,
+    "sizes": {
+      "md": {
+        "width": 1200,
+        "height": 675,
+        "bytes": 30284
+      }
+    }
+  },
+  "about-heart": {
+    "width": 1080,
+    "height": 1080,
+    "alpha": true,
+    "sizes": {
+      "md": {
+        "width": 1080,
+        "height": 1080,
+        "bytes": 42200
+      }
+    }
+  },
+  "about-pulse": {
+    "width": 1080,
+    "height": 1080,
+    "alpha": true,
+    "sizes": {
+      "md": {
+        "width": 1080,
+        "height": 1080,
+        "bytes": 57768
+      }
+    }
+  },
+  "about-decor": {
+    "width": 282,
+    "height": 220,
+    "alpha": true,
+    "sizes": {
+      "md": {
+        "width": 282,
+        "height": 220,
+        "bytes": 4028
+      }
+    }
+  },
+  "about-house": {
+    "width": 1080,
+    "height": 1080,
+    "alpha": true,
+    "sizes": {
+      "md": {
+        "width": 1080,
+        "height": 1080,
+        "bytes": 55210
+      }
+    }
+  },
+  "about-video": {
+    "width": 1920,
+    "height": 1009,
+    "alpha": false,
+    "sizes": {
+      "md": {
+        "width": 1200,
+        "height": 631,
+        "bytes": 24776
+      }
+    }
+  }
+}

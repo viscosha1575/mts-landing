@@ -1,0 +1,107 @@
+---
+/** Внутренняя страница: «Больше о МТС» и «Почему с нами классно» (фрейм Main в Figma). */
+const facts = [
+  { big: '№1', text: 'в Телекоме по размеру абонентской базы**', area: 'md:col-start-3 md:row-start-1' },
+  { big: '№1', text: '№1 В2В-телеком в сегментах IоТ и Private LTE***', area: 'md:col-start-4 md:row-start-1' },
+  { big: 'Платина', text: 'в рейтинге работодателей РБК', area: 'md:col-start-3 md:row-start-2', small: true },
+  { big: 'I группа', text: 'в рейтинге работодателей РБК', area: 'md:col-start-4 md:row-start-2', small: true },
+  { big: '64 000', text: 'сотрудников', area: 'md:col-start-1 md:row-start-3', small: true },
+  { big: '32 года', text: 'на рынке', area: 'md:col-start-2 md:row-start-3', small: true },
+];
+const perks = ['Забота о благополучии', 'Комфортная среда', 'Бонусы от компании', 'Профессиональное развитие', 'Корпоративная культура'];
+---
+<section id="about" class="relative z-10 bg-white text-ink-deep">
+  <div class="mx-auto w-full max-w-[1264px] px-5 pb-20 pt-[100px] md:px-8">
+    <h2 class="font-wide text-[32px] font-medium uppercase leading-none md:text-[56px]" data-reveal-on-scroll>Больше о МТС</h2>
+
+    <div class="mt-10 grid gap-4 md:mt-14 md:grid-cols-4 md:grid-rows-[180px_180px_180px]">
+      <a href="#career" class="card-gradient relative col-span-full overflow-hidden rounded-[40px] p-8 text-[#fafafa] md:col-span-2 md:row-span-2" data-reveal-on-scroll>
+        <div class="relative z-10">
+          <div class="font-wide text-[64px] font-medium uppercase leading-[0.9] tracking-[-0.03em] md:text-[94px]">№1</div>
+          <p class="mt-1 max-w-[259px] font-text text-[18px] leading-6">в рейтинге технологичности российских операторов связи*</p>
+        </div>
+        <img src="/img/about-pulse-md.webp" alt="" width="1080" height="1080" loading="lazy" class="pointer-events-none absolute -top-14 left-[28%] w-[485px] max-w-none" />
+      </a>
+
+      {facts.map((f) => (
+        <div class:list={['flex flex-col justify-between rounded-3xl bg-mist p-6', f.area]} data-reveal-on-scroll>
+          <div class:list={['font-wide font-medium leading-none tracking-[-0.02em]', f.small ? 'text-[40px]' : 'text-[48px] uppercase md:text-[56px]']}>{f.big}</div>
+          <p class="max-w-[200px] font-text text-[16px] leading-[1.35] text-[#626c77]">{f.text}</p>
+        </div>
+      ))}
+
+      <div class="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-mist p-6 md:col-span-2 md:col-start-3 md:row-start-3" data-reveal-on-scroll>
+        <div class="font-wide text-[40px] font-medium leading-none">83 млн</div>
+        <p class="font-text text-[16px] text-[#626c77]">клиентов</p>
+        <img src="/img/about-heart-md.webp" alt="" width="1080" height="1080" loading="lazy" class="pointer-events-none absolute right-[36%] top-10 w-[120px]" />
+        <img src="/img/about-trophy-md.webp" alt="" width="1200" height="675" loading="lazy" class="pointer-events-none absolute -right-6 top-0 w-[260px] max-w-none" />
+      </div>
+    </div>
+
+    <div class="mt-8 space-y-1 font-text text-[12px] leading-[1.3] text-[#8d969f]">
+      <p>*По данным анализа технологического развития операторов связи J’Son and Partners в 2025</p>
+      <p>**По данным исследования «Российский рынок телекоммуникаций — 2025» ТМТ Консалтинг</p>
+      <p>***По оценке аналитического агентства ONSIDE</p>
+    </div>
+  </div>
+
+  <div class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-[1000px] bg-sky" style="clip-path: polygon(0 62%, 100% 22%, 100% 100%, 0 100%);" aria-hidden="true"></div>
+    <div class="relative mx-auto w-full max-w-[1264px] px-5 pb-40 pt-6 md:px-8">
+      <div id="stories" class="relative overflow-hidden rounded-[32px] bg-mist p-6 md:p-8" data-reveal-on-scroll>
+        <img src="/img/about-decor-md.webp" alt="" width="282" height="220" loading="lazy" class="pointer-events-none absolute -top-2 right-6 w-[140px] md:w-[200px]" />
+        <p class="max-w-[520px] font-text text-[22px] leading-[1.25] md:text-[29px]">Работа над интересными задачами, которые развивают тебя, компанию и мир</p>
+        <button type="button" class="group relative mt-8 block aspect-video w-full overflow-hidden rounded-[32px] bg-black text-left" aria-label="Смотреть историю">
+          <img src="/img/about-video-md.webp" alt="" width="1200" height="631" loading="lazy" class="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]" />
+          <span class="absolute left-1/2 top-1/2 flex size-[52px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 backdrop-blur-[10px] transition-transform duration-500 group-hover:scale-110">
+            <img src="/play.svg" alt="" width="32" height="32" />
+          </span>
+        </button>
+      </div>
+
+      <h2 id="career" class="mt-24 font-wide text-[32px] font-medium uppercase leading-none md:text-[56px]" data-reveal-on-scroll>Почему с нами классно</h2>
+      <div class="mt-8 grid gap-4 rounded-[40px] bg-mist p-1 md:grid-cols-5 md:grid-rows-[180px_180px_180px]" data-reveal-on-scroll>
+        <div class="flex flex-col justify-between rounded-[40px] p-7 md:col-span-2 md:row-span-3 md:p-8">
+          <p class="font-text text-[22px] font-medium leading-[1.3] tracking-[-0.04em] text-ink md:text-[24px]">Наша задача — сделать так, чтобы вам было хорошо на работе и в жизни.</p>
+          <div class="mt-8 flex flex-wrap gap-2.5">
+            {perks.map((p, i) => (
+              <button type="button" class:list={['rounded-2xl px-2.5 py-1 font-text text-[13px] font-medium tracking-[-0.04em] transition-colors', i === 0 ? 'bg-ink-deep text-white' : 'bg-white text-ink-deep hover:bg-ink-deep hover:text-white']} data-perk>{p}</button>
+            ))}
+          </div>
+        </div>
+        <div class="card-gradient card-gradient--2 relative min-h-[420px] overflow-hidden rounded-[40px] p-8 text-[#fafafa] md:col-span-3 md:row-span-3">
+          <div class="relative z-10">
+            <p class="font-text text-[24px] font-medium tracking-[-0.04em] leading-[1.3]">Заботимся о благополучии команды</p>
+            <p class="mt-2 max-w-[297px] font-text text-[18px] leading-6">ДМС, консультации психологов и юристов, прием врача в офисе</p>
+          </div>
+          <img src="/img/about-house-md.webp" alt="" width="1080" height="1080" loading="lazy" class="pointer-events-none absolute -right-10 top-2 w-[420px] max-w-none rotate-[3.6deg] md:right-[4%] md:w-[620px]" />
+          <div class="absolute bottom-7 right-9 z-10 flex gap-4">
+            <button type="button" class="flex size-11 items-center justify-center rounded-full bg-white text-ink-deep shadow-[0_4px_8px_rgba(0,0,0,0.08)] transition-transform hover:scale-105" aria-label="Предыдущий">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="flex size-11 items-center justify-center rounded-full bg-white text-ink-deep shadow-[0_4px_8px_rgba(0,0,0,0.08)] transition-transform hover:scale-105" aria-label="Следующий">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="mt-8 flex justify-center" data-reveal-on-scroll>
+        <a href="#" class="btn-red">Смотреть вакансии</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .card-gradient { background: linear-gradient(176deg, #8080d1 0%, #ffdfe0 100%); }
+  .card-gradient--2 { background: linear-gradient(162deg, #8080d1 13%, #ffdfe0 89%); }
+  .btn-red {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 52px; width: 240px;
+    border-radius: 16px; background: var(--color-red); color: #fff;
+    font-family: var(--font-wide); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase;
+    transition: transform 0.4s var(--ease-out-expo), box-shadow 0.4s;
+  }
+  .btn-red:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -10px rgba(255, 0, 50, 0.6); }
+  [data-reveal-on-scroll] { opacity: 0; transform: translateY(28px); transition: opacity 0.9s var(--ease-out-expo), transform 0.9s var(--ease-out-expo); }
+  [data-reveal-on-scroll].is-in { opacity: 1; transform: none; }
+</style>

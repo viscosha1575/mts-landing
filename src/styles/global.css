@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* ───────────────────────── Fonts ─────────────────────────
+   Фирменные MTS Wide / MTS Text. Положите файлы в public/fonts/:
+   MTSWide-Medium.woff2, MTSWide-Bold.woff2, MTSText-Regular.woff2, MTSText-Medium.woff2.
+   Пока файлов нет, браузер молча уйдёт на fallback-стек. */
+@font-face {
+  font-family: "MTS Wide";
+  src: url("/fonts/MTSWide-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "MTS Wide";
+  src: url("/fonts/MTSWide-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "MTS Text";
+  src: url("/fonts/MTSText-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "MTS Text";
+  src: url("/fonts/MTSText-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+/* ───────────────────────── Tokens ───────────────────────── */
+@theme {
+  --color-red: #ff0032;
+  --color-cream: #faf4f0;
+  --color-ink: #3f3f3f;
+  --color-ink-deep: #1e1e1e;
+  --color-mist: #f2f3f7;
+  --color-sky: #6fb3ff;
+
+  --font-wide: "MTS Wide", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-text: "MTS Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* ───────────────────────── Base ───────────────────────── */
+:root {
+  color-scheme: light;
+  --vw: 1vw;
+  /* Масштаб макета: 1479px в Figma = 100vw. Все размеры оверлея через fs() */
+  --fig: calc(100vw / 1479);
+}
+html {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+body { margin: 0; overflow-x: clip; }
+img { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; }
+
+::selection { background: var(--color-red); color: #fff; }
+
+/* Единица макета. fs(80) = 80px при ширине 1479, масштабируется с вьюпортом */
+@utility fs-* {
+  font-size: calc(--value(number) * var(--fig));
+}
+
+/* Зерно поверх сцены, как у thorgal */
+.grain {
+  position: fixed; inset: -50%; z-index: 4; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.16; mix-blend-mode: overlay;
+  animation: grain 0.6s steps(3) infinite;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); }
+  33% { transform: translate(-3%, 2%); }
+  66% { transform: translate(2%, -3%); }
+  100% { transform: translate(0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain { animation: none; }
+}

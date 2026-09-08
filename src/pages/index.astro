@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Loader from '../components/Loader.astro';
+import Experience from '../components/Experience.astro';
+import About from '../components/About.astro';
+import Footer from '../components/Footer.astro';
+---
+<Base title="МТС — технологии, которые держат связь">
+  <a id="top" class="sr-only" href="#experience">Начало</a>
+  <Loader />
+  <Header />
+  <Experience />
+  <About />
+  <Footer />
+  <div class="grain" aria-hidden="true"></div>
+  <script>
+    import { boot } from '../lib/app';
+    import { initPage } from '../lib/page';
+    const app = boot();
+    initPage(app.lenis);
+    if (import.meta.env.DEV) (window as any).__app = app;
+  </script>
+</Base>

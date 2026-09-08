@@ -1,0 +1,31 @@
+---
+import { nav } from '../lib/content';
+---
+<header id="header" data-theme="light" class="header fixed inset-x-0 top-0 z-30 pointer-events-none">
+  <div class="mx-auto flex items-center justify-between" style="width: calc(1356 * var(--fig)); padding-top: calc(27 * var(--fig));">
+    <a href="#top" class="pointer-events-auto block" aria-label="МТС — на главную" style="width: max(28px, calc(34 * var(--fig))); height: max(28px, calc(34 * var(--fig)));">
+      <img src="/logo.svg" alt="" width="34" height="34" class="size-full" />
+    </a>
+    <nav class="pointer-events-auto flex items-center font-text" style="gap: max(18px, calc(44 * var(--fig))); font-size: max(13px, calc(15.4 * var(--fig)));">
+      {nav.map((n) => <a href={n.href} class="nav-link">{n.label}</a>)}
+    </nav>
+  </div>
+</header>
+
+<style>
+  .header { color: var(--color-cream); transition: color 0.5s; }
+  .header[data-theme='page'] { color: var(--color-ink); }
+  .nav-link { position: relative; padding-block: 4px; white-space: nowrap; filter: drop-shadow(0 0 6px rgba(0,0,0,0.18)); }
+  .header[data-theme='page'] .nav-link { filter: none; }
+  .nav-link::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: currentColor;
+    transform: scaleX(0); transform-origin: right; transition: transform 0.45s var(--ease-out-expo);
+  }
+  .nav-link:hover::after { transform: scaleX(1); transform-origin: left; }
+  @media (max-width: 767px) {
+    .header > div { width: calc(100% - 40px); padding-top: 18px; }
+    .header a[aria-label] { width: 32px; height: 32px; }
+    nav { gap: 18px; font-size: 13px; }
+    nav a:first-child { display: none; }
+  }
+</style>

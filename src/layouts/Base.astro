@@ -1,0 +1,23 @@
+---
+import '../styles/global.css';
+interface Props { title: string; description?: string }
+const { title, description = 'МТС — технологии, которые держат связь: базовые станции, аэростаты, дата-центры и умный город. Карьера в техническом блоке МТС.' } = Astro.props;
+---
+<!doctype html>
+<html lang="ru" class="lenis">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#faf4f0" />
+    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+    <link rel="preload" as="image" href="/img/s1-bg-md.webp" type="image/webp" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
