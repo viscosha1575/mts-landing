@@ -30,7 +30,6 @@ const MAP = {
   's5_plant_cut.png': 's5-plant',
   's6_bg.png': 's6-city',
   's7_room_raw1.png': 's7-room',
-  'view7_raw2.png': 's7-view',
   's7_fg_cut.png': 's7-fg',
   // внутренняя страница
   'main_raw1.png': 'about-trophy',

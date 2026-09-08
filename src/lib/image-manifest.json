@@ -271,23 +271,6 @@
       }
     }
   },
-  "s7-view": {
-    "width": 1664,
-    "height": 1056,
-    "alpha": false,
-    "sizes": {
-      "xl": {
-        "width": 1664,
-        "height": 1056,
-        "bytes": 285940
-      },
-      "md": {
-        "width": 1664,
-        "height": 1056,
-        "bytes": 267120
-      }
-    }
-  },
   "s7-fg": {
     "width": 602,
     "height": 902,
