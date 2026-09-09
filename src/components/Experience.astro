@@ -26,11 +26,6 @@ import Tooltip from './Tooltip.astro';
         </g>
       </svg>
 
-      <!-- Логотип на куртке / стене при зуме (кадры 27–29) -->
-      <div id="logo-zoom" class="pointer-events-none absolute left-0 top-0 opacity-0" aria-hidden="true">
-        <img src="/logo.svg" alt="" class="size-full" />
-      </div>
-
       {locations.map((loc) => (
         <div class="loc" data-loc={loc.id}>
           <div

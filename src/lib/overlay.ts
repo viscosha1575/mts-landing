@@ -9,14 +9,6 @@ import gsap from 'gsap';
 import type { Stage } from './webgl/Stage';
 import { frameToT, sampleNumber, sampleRect, tToFrame, type Key, type Rect } from './timeline';
 
-const LOGO_TRACK: Key<Rect>[] = [
-  { f: 26.6, v: [683, 214, 271, 278] },
-  { f: 27, v: [653, 204, 331, 339] },
-  { f: 28, v: [298, -35, 883, 903] },
-  { f: 29, v: [-600, -950, 2680, 2740] },
-];
-const LOGO_ALPHA: Key<number>[] = [{ f: 26.7, v: 0 }, { f: 27.2, v: 1 }, { f: 28.4, v: 1 }, { f: 28.9, v: 0 }];
-
 const WAVES_TRACK: Key<Rect>[] = [
   { f: 0, v: [924, 61, 453, 431] },
   { f: 1, v: [880, 17, 541, 514] },
@@ -32,7 +24,6 @@ export class Overlay {
   root: HTMLElement;
   tl: gsap.core.Timeline;
   private positioned: HTMLElement[];
-  private logo: HTMLElement | null;
   private waves: HTMLElement | null;
   private tether: HTMLElement | null;
   private pager: HTMLElement[];
@@ -40,7 +31,6 @@ export class Overlay {
   constructor(private stage: Stage) {
     this.root = document.getElementById('overlay') as HTMLElement;
     this.positioned = [...this.root.querySelectorAll<HTMLElement>('[data-x]')];
-    this.logo = this.root.querySelector('#logo-zoom');
     this.waves = this.root.querySelector('#waves');
     this.tether = this.root.querySelector('#tether');
     this.pager = [...document.querySelectorAll<HTMLElement>('[data-pager]')];
@@ -122,11 +112,6 @@ export class Overlay {
     this.tl.progress(t);
     const f = tToFrame(t);
 
-    if (this.logo) {
-      const a = sampleNumber(LOGO_ALPHA, t);
-      this.logo.style.opacity = String(a);
-      if (a > 0) this.place(this.logo, sampleRect(LOGO_TRACK, t));
-    }
     if (this.waves) {
       const a = sampleNumber(WAVES_ALPHA, t);
       this.waves.style.opacity = String(a * 0.9);
