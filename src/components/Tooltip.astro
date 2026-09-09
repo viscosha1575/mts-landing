@@ -4,8 +4,8 @@
  * Линия рисуется SVG в направлении `side`, на конце — точка с кольцом.
  */
 import type { Tooltip } from '../lib/content';
-interface Props { tip: Tooltip; fin: number; fout: number; style?: 'glass' | 'solid' }
-const { tip, fin, fout, style = 'glass' } = Astro.props;
+interface Props { tip: Tooltip; fin: number; fout: number; style?: 'glass' | 'solid'; type: { title: number; text: number; line: number } }
+const { tip, fin, fout, style = 'glass', type } = Astro.props;
 const horizontal = tip.side === 'left' || tip.side === 'right';
 const L = tip.len;
 // SVG для выноски: линия длиной L и точка на конце
@@ -22,8 +22,8 @@ const y2 = horizontal ? 10 : (tip.side === 'bottom' ? L : 12);
   data-in={fin + (tip.delay ?? 0)} data-out={fout} data-dir="scale"
 >
   <div class="tip__box" style={`width: calc(${tip.w}px * var(--rs, 1));`}>
-    <p class="tip__title" set:html={tip.title.replace('\n', '<br/>')} />
-    <p class="tip__text">{tip.text}</p>
+    <p class="tip__title" style={`font-size: calc(${type.title}px * var(--rs, 1));`} set:html={tip.title.replaceAll('\n', '<br/>')} />
+    <p class="tip__text" style={`font-size: calc(${type.text}px * var(--rs, 1)); line-height: calc(${type.line}px * var(--rs, 1));${tip.tw ? ` width: calc(${tip.tw}px * var(--rs, 1));` : ''}`} set:html={tip.text.replaceAll('\n', '<br/>')} />
   </div>
   <svg class="tip__line" width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} aria-hidden="true">
     <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" stroke-width="0.8" class="tip__stroke" />
@@ -56,9 +56,10 @@ const y2 = horizontal ? 10 : (tip.side === 'bottom' ? L : 12);
   .tip--solid .tip__box { background: var(--color-cream); backdrop-filter: none; }
   .tip__title {
     font-family: var(--font-wide); font-weight: 700; text-transform: uppercase;
-    font-size: calc(10.8px * var(--rs, 1)); line-height: 1.5; margin: 0 0 calc(3px * var(--rs, 1));
+    line-height: calc(16.2px * var(--rs, 1)); margin: 0 0 calc(3.08px * var(--rs, 1)); white-space: nowrap;
   }
-  .tip__text { font-family: var(--font-text); font-size: calc(11px * var(--rs, 1)); line-height: 1.45; margin: 0; }
+  /* размеры и интерлиньяж задаются инлайном из content.ts — в Figma они разные по локациям */
+  .tip__text { font-family: var(--font-text); margin: 0; max-width: none; white-space: nowrap; }
   .tip__line { flex: none; overflow: visible; }
   .tip--right .tip__line, .tip--left .tip__line { margin-inline: -1px; }
   .tip__ring { animation: ring 2.4s ease-out infinite; transform-origin: center; transform-box: fill-box; }

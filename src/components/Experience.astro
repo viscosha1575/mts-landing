@@ -45,15 +45,15 @@ import Tooltip from './Tooltip.astro';
                 {locations.map((_, i) => <i class:list={{ 'is-active': i === loc.index }}></i>)}
               </span>
             </div>
-            <h2 class="loc__h" data-reveal style={`font-size: calc(${loc.titleSize}px * var(--ui, 1)); ${loc.titleWidth ? `width: calc(${loc.titleWidth}px * var(--ui, 1));` : ''}`}
-              set:html={loc.title.replace('\n', '<br/>')} />
-            <p class="loc__p" data-reveal style={`width: calc(${loc.textWidth}px * var(--ui, 1));`}>{loc.text}</p>
+            <h2 class="loc__h" data-reveal style={`font-size: calc(${loc.titleSize}px * var(--ui, 1)); line-height: ${loc.titleLine ? `calc(${loc.titleLine}px * var(--ui, 1))` : '1'}; ${loc.titleWidth ? `width: calc(${loc.titleWidth}px * var(--ui, 1));` : ''}`}
+              set:html={loc.title.replaceAll('\n', ' <br/>')} />
+            <p class="loc__p" data-reveal style={`width: calc(${loc.textWidth}px * var(--ui, 1));`} set:html={loc.text.replaceAll('\n', ' <br/>')} />
             <ul class="loc__chips" data-reveal aria-label="Факты">
-              {loc.tooltips.map((tip) => <li>{tip.title.replace('\n', ' ')}</li>)}
+              {loc.tooltips.map((tip) => <li>{tip.title.replaceAll('\n', ' ')}</li>)}
             </ul>
           </div>
           {loc.tooltips.map((tip) => (
-            <Tooltip tip={tip} fin={loc.titleIn !== undefined ? loc.titleIn + 0.05 : loc.titleFrame - 0.2} fout={loc.titleFrame + 0.85} style={loc.tooltipStyle} />
+            <Tooltip tip={tip} type={loc.tip} fin={loc.titleIn !== undefined ? loc.titleIn + 0.05 : loc.titleFrame - 0.2} fout={loc.titleFrame + 0.85} style={loc.tooltipStyle} />
           ))}
         </div>
       ))}
@@ -77,13 +77,14 @@ import Tooltip from './Tooltip.astro';
     pointer-events: none;
   }
   .loc__meta { display: flex; align-items: center; gap: calc(20.8px * var(--ui, 1)); margin-bottom: calc(24.6px * var(--ui, 1)); }
-  .loc__num { font-family: var(--font-wide); font-weight: 500; color: var(--color-red); font-size: calc(27.7px * var(--ui, 1)); line-height: 1; }
+  .loc__num { font-family: var(--font-wide); font-weight: 500; color: var(--color-red); font-size: calc(27.73px * var(--ui, 1)); line-height: calc(25.75px * var(--ui, 1)); }
   .pager { display: inline-flex; gap: calc(18.5px * var(--ui, 1)); }
   .pager i { display: block; width: calc(9.2px * var(--ui, 1)); height: calc(9.2px * var(--ui, 1)); border-radius: 50%; background: var(--color-cream); transition: background 0.4s, transform 0.4s; }
   .pager i.is-active { background: var(--color-red); transform: scale(1.15); }
-  .loc__h { font-family: var(--font-wide); font-weight: 500; line-height: 0.72; letter-spacing: -0.01em; margin: 0 0 calc(24.6px * var(--ui, 1)); white-space: nowrap; }
-  .loc__h[style*='width'] { white-space: normal; line-height: 1; }
-  .loc__p { font-family: var(--font-text); font-size: calc(18.5px * var(--ui, 1)); line-height: 1.12; margin: 0; }
+  /* метрики как в Figma: интерлиньяж заголовка инлайном (54.42px или 1), без трекинга; абзац 18.489px / 1 */
+  .loc__h { font-family: var(--font-wide); font-weight: 500; margin: 0 0 calc(24.65px * var(--ui, 1)); white-space: nowrap; }
+  /* переносы заданы в content.ts как в макете — на десктопе строки не ломаем */
+  .loc__p { font-family: var(--font-text); font-size: calc(18.489px * var(--ui, 1)); line-height: 1; margin: 0; white-space: nowrap; }
 
   .waves { transform-origin: 0 0; opacity: 0; mix-blend-mode: overlay; }
   .waves span {
@@ -118,8 +119,9 @@ import Tooltip from './Tooltip.astro';
     .loc__title[data-theme='dark']::before {
       background: linear-gradient(to top, rgba(10,10,12,0.9) 0%, rgba(10,10,12,0.7) 55%, rgba(10,10,12,0) 100%);
     }
-    .loc__h { font-size: clamp(24px, 7.5vw, 56px) !important; white-space: normal; line-height: 1; width: auto !important; overflow-wrap: anywhere; }
-    .loc__p { font-size: 15px; line-height: 1.3; width: auto !important; max-width: 560px; }
+    .loc__h { font-size: clamp(24px, 7.5vw, 56px) !important; white-space: normal; line-height: 1 !important; width: auto !important; overflow-wrap: anywhere; }
+    .loc__p { font-size: 15px; line-height: 1.3; width: auto !important; max-width: 560px; white-space: normal; }
+    .loc__p br, .loc__h br { display: none; }
     .loc__meta { margin-bottom: 14px; }
     .loc__num { font-size: 22px; }
     .pager i { width: 7px; height: 7px; }
