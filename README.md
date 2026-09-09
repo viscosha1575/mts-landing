@@ -60,7 +60,7 @@ document.getElementById('debug').classList.remove('hidden') // t / кадр / р
 
 ## Шрифты
 
-В макете MTS Wide и MTS Text. Файлов в проекте нет, подключение уже прописано в `src/styles/global.css`: положите `MTSWide-Medium.woff2`, `MTSWide-Bold.woff2`, `MTSText-Regular.woff2`, `MTSText-Medium.woff2` в `public/fonts/`. До этого работает fallback (Inter / системный).
+В макете MTS Wide (Medium, Bold) и MTS Text (Regular). Лежат в `public/fonts/` как WOFF2 (сконвертированы из TTF через fontTools), подключены в `src/styles/global.css` и предзагружаются в `src/layouts/Base.astro`. MTS Text Medium не передавался — Regular закрывает веса 400–500.
 
 ## Что сделано кодом, а не графикой
 

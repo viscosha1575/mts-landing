@@ -1,9 +1,7 @@
 @import "tailwindcss";
 
 /* ───────────────────────── Fonts ─────────────────────────
-   Фирменные MTS Wide / MTS Text. Положите файлы в public/fonts/:
-   MTSWide-Medium.woff2, MTSWide-Bold.woff2, MTSText-Regular.woff2, MTSText-Medium.woff2.
-   Пока файлов нет, браузер молча уйдёт на fallback-стек. */
+   Фирменные MTS Wide (Medium, Bold) и MTS Text (Regular) — WOFF2 в public/fonts/. */
 @font-face {
   font-family: "MTS Wide";
   src: url("/fonts/MTSWide-Medium.woff2") format("woff2");
@@ -16,16 +14,11 @@
   font-weight: 700;
   font-display: swap;
 }
+/* Medium для MTS Text не передан: Regular закрывает 400–500, чтобы браузер не рисовал псевдожирный */
 @font-face {
   font-family: "MTS Text";
   src: url("/fonts/MTSText-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "MTS Text";
-  src: url("/fonts/MTSText-Medium.woff2") format("woff2");
-  font-weight: 500;
+  font-weight: 400 500;
   font-display: swap;
 }
 
