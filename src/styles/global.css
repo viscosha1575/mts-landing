@@ -58,6 +58,10 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-stopped { overflow: hidden; }
 
 body { margin: 0; overflow-x: clip; }
+
+/* Телефон: пока сцена держит экран (stepper.ts), жесты забирает она, страница не тянется и не пружинит */
+html.is-stepping, html.is-stepping body { overscroll-behavior: none; }
+html.is-stepping #experience { touch-action: none; }
 img { display: block; max-width: 100%; }
 button { font: inherit; color: inherit; }
 

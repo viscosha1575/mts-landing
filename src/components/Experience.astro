@@ -22,7 +22,7 @@ const flow = (s: string) => s
   .replace(/(\d)\s+(?=\p{L})/gu, '$1\u00A0');
 ---
 <section id="experience" class="relative" aria-label="Технологии МТС: путешествие по локациям">
-  <div class="sticky top-0 h-[100svh] overflow-hidden bg-cream">
+  <div class="exp__view sticky top-0 h-[100svh] overflow-hidden bg-cream">
     <canvas id="stage" class="absolute inset-0 block size-full"></canvas>
     <canvas id="fx" class="pointer-events-none absolute inset-0 block size-full opacity-0"></canvas>
 
@@ -189,6 +189,8 @@ const flow = (s: string) => s
   @media (max-width: 767px) {
     .mloc { display: block; }
     .loc[data-frames='desktop'] { display: none; }
+    /* на телефоне сцена листается шагами (stepper.ts): секция ровно в экран, без высоты под скролл */
+    #experience, .exp__view { height: 100vh; height: 100dvh; }
   }
 
   /* Планшеты и телефоны: заголовок прижат к низу, плашки превращаются в чипсы, под текстом — подложка */
@@ -208,7 +210,7 @@ const flow = (s: string) => s
     .loc__p { font-size: 15px; line-height: 1.3; width: auto !important; max-width: 560px; white-space: normal; }
     /* <br> приходят через set:html и не получают атрибут области видимости — нужен :global */
     .loc__p :global(br), .loc__h :global(br) { display: none; }
-    .loc__meta { margin-bottom: 14px; }
+    .loc__meta { margin-bottom: 14px; gap: 14px; }
     .loc__num { font-size: 22px; }
     .pager i { width: 7px; height: 7px; }
     .pager { gap: 12px; }

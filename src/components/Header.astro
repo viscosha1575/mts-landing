@@ -32,10 +32,15 @@ import { nav } from '../lib/content';
       menu.hidden = !open;
       toggle.setAttribute('aria-expanded', String(open));
       toggle.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+      // сцена на телефоне листается тапом — пока меню открыто, тап мимо него только закрывает меню
+      if (open) document.documentElement.dataset.menu = 'open'; else delete document.documentElement.dataset.menu;
     };
     toggle.addEventListener('click', () => set(menu.hidden));
     menu.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('a')) set(false); });
     addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
+    document.addEventListener('pointerdown', (e) => {
+      if (!menu.hidden && !(e.target as HTMLElement).closest('#header-menu, [data-menu-toggle]')) set(false);
+    });
   }
 </script>
 
