@@ -1,137 +1,273 @@
 {
-  "s1-bg": {
-    "width": 4438,
-    "height": 2496,
+  "s1-sky": {
+    "width": 3840,
+    "height": 2159,
+    "alpha": false,
+    "sizes": {
+      "xl": {
+        "width": 3840,
+        "height": 2159,
+        "bytes": 81642
+      },
+      "md": {
+        "width": 2048,
+        "height": 1151,
+        "bytes": 16716
+      }
+    }
+  },
+  "s1-city": {
+    "width": 4000,
+    "height": 2285,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 4000,
+        "height": 2285,
+        "bytes": 630336
+      },
+      "md": {
+        "width": 2048,
+        "height": 1170,
+        "bytes": 286518
+      }
+    }
+  },
+  "s1-roof": {
+    "width": 4096,
+    "height": 2305,
     "alpha": true,
     "sizes": {
       "xl": {
         "width": 4096,
-        "height": 2304,
-        "bytes": 619670
+        "height": 2305,
+        "bytes": 688346
       },
       "md": {
         "width": 2048,
-        "height": 1152,
-        "bytes": 220846
-      }
-    }
-  },
-  "s1-dish": {
-    "width": 232,
-    "height": 368,
-    "alpha": true,
-    "sizes": {
-      "xl": {
-        "width": 232,
-        "height": 368,
-        "bytes": 10640
-      },
-      "md": {
-        "width": 232,
-        "height": 368,
-        "bytes": 10310
-      }
-    }
-  },
-  "s1-cabinet": {
-    "width": 493,
-    "height": 2409,
-    "alpha": true,
-    "sizes": {
-      "xl": {
-        "width": 493,
-        "height": 2409,
-        "bytes": 9182
-      },
-      "md": {
-        "width": 493,
-        "height": 2409,
-        "bytes": 8640
-      }
-    }
-  },
-  "s1-fg": {
-    "width": 1048,
-    "height": 317,
-    "alpha": true,
-    "sizes": {
-      "xl": {
-        "width": 1048,
-        "height": 317,
-        "bytes": 41908
-      },
-      "md": {
-        "width": 1048,
-        "height": 317,
-        "bytes": 40958
+        "height": 1153,
+        "bytes": 216462
       }
     }
   },
   "airship": {
-    "width": 1440,
-    "height": 1092,
+    "width": 2048,
+    "height": 1484,
     "alpha": true,
     "sizes": {
       "xl": {
-        "width": 1440,
-        "height": 1092,
-        "bytes": 49402
+        "width": 2048,
+        "height": 1484,
+        "bytes": 77566
       },
       "md": {
-        "width": 1440,
-        "height": 1092,
-        "bytes": 47196
+        "width": 2048,
+        "height": 1484,
+        "bytes": 74554
       }
     }
   },
-  "s2-field": {
-    "width": 4437,
-    "height": 2496,
+  "s2-sky": {
+    "width": 3172,
+    "height": 1984,
+    "alpha": false,
+    "sizes": {
+      "xl": {
+        "width": 3172,
+        "height": 1984,
+        "bytes": 45828
+      },
+      "md": {
+        "width": 2048,
+        "height": 1281,
+        "bytes": 21032
+      }
+    }
+  },
+  "s2-far": {
+    "width": 3344,
+    "height": 1880,
     "alpha": true,
     "sizes": {
       "xl": {
-        "width": 4096,
-        "height": 2304,
-        "bytes": 263874
+        "width": 3344,
+        "height": 1880,
+        "bytes": 702052
+      },
+      "md": {
+        "width": 2048,
+        "height": 1151,
+        "bytes": 263110
+      }
+    }
+  },
+  "s2-near": {
+    "width": 4000,
+    "height": 2286,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 4000,
+        "height": 2286,
+        "bytes": 529258
+      },
+      "md": {
+        "width": 2048,
+        "height": 1170,
+        "bytes": 221654
+      }
+    }
+  },
+  "s3-lab": {
+    "width": 3840,
+    "height": 2160,
+    "alpha": false,
+    "sizes": {
+      "xl": {
+        "width": 3840,
+        "height": 2160,
+        "bytes": 378840
       },
       "md": {
         "width": 2048,
         "height": 1152,
-        "bytes": 85526
-      }
-    }
-  },
-  "s3-bg": {
-    "width": 2752,
-    "height": 1536,
-    "alpha": false,
-    "sizes": {
-      "xl": {
-        "width": 2752,
-        "height": 1536,
-        "bytes": 223028
-      },
-      "md": {
-        "width": 2048,
-        "height": 1143,
-        "bytes": 138024
+        "bytes": 161434
       }
     }
   },
   "s3-model": {
-    "width": 1440,
-    "height": 1092,
+    "width": 2048,
+    "height": 1591,
     "alpha": true,
     "sizes": {
       "xl": {
-        "width": 1440,
-        "height": 1092,
-        "bytes": 49402
+        "width": 2048,
+        "height": 1591,
+        "bytes": 80426
       },
       "md": {
-        "width": 1440,
-        "height": 1092,
-        "bytes": 47196
+        "width": 2048,
+        "height": 1591,
+        "bytes": 75472
+      }
+    }
+  },
+  "m-s1-sky": {
+    "width": 1024,
+    "height": 1536,
+    "alpha": false,
+    "sizes": {
+      "xl": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 14872
+      },
+      "md": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 13610
+      }
+    }
+  },
+  "m-s1-city": {
+    "width": 1024,
+    "height": 1536,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 219840
+      },
+      "md": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 206112
+      }
+    }
+  },
+  "m-s1-roof": {
+    "width": 1024,
+    "height": 1536,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 208786
+      },
+      "md": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 199282
+      }
+    }
+  },
+  "m-s2-sky": {
+    "width": 1024,
+    "height": 1536,
+    "alpha": false,
+    "sizes": {
+      "xl": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 11396
+      },
+      "md": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 10292
+      }
+    }
+  },
+  "m-s2-far": {
+    "width": 1024,
+    "height": 1536,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 175260
+      },
+      "md": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 163694
+      }
+    }
+  },
+  "m-s2-near": {
+    "width": 1024,
+    "height": 1536,
+    "alpha": true,
+    "sizes": {
+      "xl": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 182156
+      },
+      "md": {
+        "width": 1024,
+        "height": 1536,
+        "bytes": 172756
+      }
+    }
+  },
+  "m-s3-lab": {
+    "width": 941,
+    "height": 1672,
+    "alpha": false,
+    "sizes": {
+      "xl": {
+        "width": 941,
+        "height": 1672,
+        "bytes": 98852
+      },
+      "md": {
+        "width": 941,
+        "height": 1672,
+        "bytes": 92020
       }
     }
   },
@@ -200,23 +336,6 @@
         "width": 2048,
         "height": 1143,
         "bytes": 143270
-      }
-    }
-  },
-  "s5-window": {
-    "width": 2817,
-    "height": 1683,
-    "alpha": true,
-    "sizes": {
-      "xl": {
-        "width": 2817,
-        "height": 1683,
-        "bytes": 139980
-      },
-      "md": {
-        "width": 2048,
-        "height": 1224,
-        "bytes": 89284
       }
     }
   },

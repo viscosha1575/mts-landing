@@ -29,3 +29,24 @@ assets-src/*
 !assets-src/s7_fg_cut.png
 !assets-src/s7_room_raw1.png
 !assets-src/view7_raw2.png
+# локации 01–03 (макет AGJMz0OKAVwgcjI1P4bYWG): готовые слои; выгрузки Figma в v3/raw — только те, что идут в сборку как есть
+!assets-src/v3/
+assets-src/v3/*
+!assets-src/v3/airship.png
+!assets-src/v3/s1_sky.png
+!assets-src/v3/s1_roof.png
+!assets-src/v3/s2_sky.png
+!assets-src/v3/s2_far.png
+!assets-src/v3/s3_lab.png
+!assets-src/v3/s3_model.png
+!assets-src/v3/m_s2_sky.png
+!assets-src/v3/m_s2_far.png
+!assets-src/v3/raw/
+assets-src/v3/raw/*
+!assets-src/v3/raw/s1_city_raw.png
+!assets-src/v3/raw/s2_near_raw.png
+!assets-src/v3/raw/m_s1_sky_raw.png
+!assets-src/v3/raw/m_s1_city_raw.png
+!assets-src/v3/raw/m_s1_roof_raw.png
+!assets-src/v3/raw/m_s2_near_raw.png
+!assets-src/v3/raw/m_s3_lab_raw.png

@@ -1,73 +1,87 @@
 ---
 /**
- * Плашка с выноской. Позиция — в координатах макета (data-x/data-y), расставляет Overlay.resize().
- * Линия рисуется SVG в направлении `side`, на конце — точка с кольцом.
+ * Плашка с выноской. Позиция — в координатах макета (data-x/data-y — угол плашки), расставляет Overlay.resize().
+ * Выноска — SVG от точки выхода на стороне `side`: прямая длиной `len`, при `turn` — со скруглённым
+ * поворотом под прямым углом; на конце точка с кольцом. Все размеры умножаются на --rs (масштаб
+ * картинки) и --k (множитель макета локации).
  */
 import type { Tooltip } from '../lib/content';
-interface Props { tip: Tooltip; fin: number; fout: number; style?: 'glass' | 'solid'; type: { title: number; text: number; line: number } }
-const { tip, fin, fout, style = 'glass', type } = Astro.props;
+interface Props {
+  tip: Tooltip; fin: number; fout: number; style?: 'glass' | 'solid';
+  type: { title: number; text: number; line: number; titleLine?: number };
+  /** множитель координат макета локации (LEGACY_SCALE для прежнего макета) */
+  k?: number;
+}
+const { tip, fin, fout, style = 'glass', type, k = 1 } = Astro.props;
+const unit = (v: number) => `calc(${v}px * var(--rs, 1) * var(--k, 1))`;
+
 const horizontal = tip.side === 'left' || tip.side === 'right';
-const L = tip.len;
-// SVG для выноски: линия длиной L и точка на конце
-const svgW = horizontal ? L + 12 : 20;
-const svgH = horizontal ? 20 : L + 12;
-const x2 = horizontal ? (tip.side === 'right' ? L : 12) : 10;
-const x1 = horizontal ? (tip.side === 'right' ? 0 : L + 12) : 10;
-const y1 = horizontal ? 10 : (tip.side === 'bottom' ? 0 : L + 12);
-const y2 = horizontal ? 10 : (tip.side === 'bottom' ? L : 12);
+const dir = tip.side === 'right' || tip.side === 'bottom' ? 1 : -1;
+const L = tip.len, T = tip.turn ?? 0;
+// путь в единицах макета от точки выхода (0, 0)
+const pt = (along: number, across: number) => (horizontal ? `${dir * along} ${across}` : `${across} ${dir * along}`);
+const r = Math.min(10, Math.abs(T), L);
+const d = T
+  ? `M0 0L${pt(L - r, 0)}Q${pt(L, 0)} ${pt(L, Math.sign(T) * r)}L${pt(L, T)}`
+  : `M0 0L${pt(L, 0)}`;
+const [ex, ey] = pt(L, T).split(' ');
+
+const at = tip.at !== undefined ? unit(tip.at) : '50%';
+const anchor = {
+  right: `left: 100%; top: ${at};`,
+  left: `left: 0; top: ${at};`,
+  bottom: `top: 100%; left: ${at};`,
+  top: `top: 0; left: ${at};`,
+}[tip.side];
 ---
 <div
-  class:list={['tip', `tip--${tip.side}`, `tip--${style}`]}
-  data-x={tip.x} data-y={tip.y}
+  class:list={['tip', `tip--${style}`]}
+  data-x={tip.x * k} data-y={tip.y * k}
   data-in={fin + (tip.delay ?? 0)} data-out={fout} data-dir="scale"
+  style={`--k: ${k};`}
 >
-  <div class="tip__box" style={`width: calc(${tip.w}px * var(--rs, 1));`}>
-    <p class="tip__title" style={`font-size: calc(${type.title}px * var(--rs, 1));`} set:html={tip.title.replaceAll('\n', '<br/>')} />
-    <p class="tip__text" style={`font-size: calc(${type.text}px * var(--rs, 1)); line-height: calc(${type.line}px * var(--rs, 1));${tip.tw ? ` width: calc(${tip.tw}px * var(--rs, 1));` : ''}`} set:html={tip.text.replaceAll('\n', '<br/>')} />
-  </div>
-  <svg class="tip__line" width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} aria-hidden="true">
-    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" stroke-width="0.8" class="tip__stroke" />
-    <circle cx={x2} cy={y2} r="2.7" fill="currentColor" />
-    <circle cx={x2} cy={y2} r="5.6" stroke="currentColor" stroke-width="0.8" fill="none" class="tip__ring" />
+  <svg class="tip__line" viewBox="0 0 1 1" style={anchor} aria-hidden="true">
+    <path d={d} fill="none" stroke="currentColor" stroke-width="0.77" />
+    <circle cx={ex} cy={ey} r="2.7" fill="currentColor" />
+    <circle cx={ex} cy={ey} r="5.78" stroke="currentColor" stroke-width="0.77" fill="none" class="tip__ring" />
   </svg>
+  <div class="tip__box" style={`width: ${unit(tip.w)};`}>
+    <p class="tip__title" style={`font-size: ${unit(type.title)}; line-height: ${unit(type.titleLine ?? 16.2)};`} set:html={tip.title.replaceAll('\n', '<br/>')} />
+    <p class="tip__text" style={`font-size: ${unit(type.text)}; line-height: ${unit(type.line)};${tip.tw ? ` width: ${unit(tip.tw)};` : ''}`} set:html={tip.text.replaceAll('\n', '<br/>')} />
+  </div>
 </div>
 
 <style>
   .tip {
     position: absolute;
-    display: flex; align-items: center;
     color: var(--color-cream);
-    --p: calc(18.5px * var(--rs, 1));
+    --u: calc(1px * var(--rs, 1) * var(--k, 1));
     will-change: transform, opacity;
   }
-  .tip--bottom, .tip--top { flex-direction: column; align-items: center; }
-  .tip--top { flex-direction: column-reverse; }
-  .tip--left { flex-direction: row-reverse; }
   .tip__box {
-    background: rgba(255, 255, 255, 0.82);
+    position: relative;
+    background: rgba(255, 255, 255, 0.8);
     border: 1px solid #fff;
-    border-radius: calc(12.3px * var(--rs, 1));
-    padding: var(--p);
+    border-radius: calc(12.326 * var(--u));
+    padding: calc(18.489 * var(--u));
     color: var(--color-ink);
-    flex: none;
     backdrop-filter: blur(6px);
     box-shadow: 0 10px 30px -18px rgba(20, 20, 40, 0.35);
   }
   .tip--solid .tip__box { background: var(--color-cream); backdrop-filter: none; }
+  /* размеры и интерлиньяж задаются инлайном из content.ts — в Figma они разные по локациям */
   .tip__title {
     font-family: var(--font-wide); font-weight: 700; text-transform: uppercase;
-    line-height: calc(16.2px * var(--rs, 1)); margin: 0 0 calc(3.08px * var(--rs, 1)); white-space: nowrap;
+    margin: 0 0 calc(3.081 * var(--u)); white-space: nowrap;
   }
-  /* размеры и интерлиньяж задаются инлайном из content.ts — в Figma они разные по локациям */
   .tip__text { font-family: var(--font-text); margin: 0; max-width: none; white-space: nowrap; }
-  .tip__line { flex: none; overflow: visible; }
-  .tip--right .tip__line, .tip--left .tip__line { margin-inline: -1px; }
+  /* viewBox 1×1 при размере 1u: координаты пути — прямо в px макета */
+  .tip__line { position: absolute; width: var(--u); height: var(--u); overflow: visible; pointer-events: none; }
   .tip__ring { animation: ring 2.4s ease-out infinite; transform-origin: center; transform-box: fill-box; }
   @keyframes ring {
     0% { transform: scale(0.6); opacity: 1; }
     100% { transform: scale(1.9); opacity: 0; }
   }
-  .tip__stroke { stroke-dasharray: 400; stroke-dashoffset: 0; }
   @media (max-width: 1023px) {
     .tip { display: none !important; }
   }

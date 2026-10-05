@@ -6,7 +6,7 @@ import gsap from 'gsap';
 import { Stage } from './webgl/Stage';
 import { Overlay } from './overlay';
 import { Bokeh } from './bokeh';
-import { TOTAL_WEIGHT, tToFrame, frameToT, sampleRect } from './timeline';
+import { MOBILE_QUERY, TOTAL_WEIGHT, VARIANT, tToFrame, frameToT, legacyFrame, sampleRect } from './timeline';
 import { scenes } from './scenes';
 
 const prefersReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -42,8 +42,14 @@ export function boot() {
   const overlay = new Overlay(stage);
   const bokeh = new Bokeh(fx);
   // проекция точек интерьера центра на экран через его камеру — для ламп перехода 3 → 4
+  // (в мобильной раскадровке лампы к интерьеру не привязаны, см. bokeh.ts)
   const s3 = scenes.find((sc) => sc.id === 's3')!;
   const projectS3 = (tt: number) => (x: number, y: number) => stage.projectScene(sampleRect(s3.cam, tt), x, y, 0);
+
+  // раскадровка выбирается при загрузке: если экран перешёл границу (поворот телефона, окно) — собираем заново
+  matchMedia(MOBILE_QUERY).addEventListener('change', (e) => {
+    if ((e.matches ? 'mobile' : 'desktop') !== VARIANT) location.reload();
+  });
 
   // ───────── скролл ─────────
   const lenis = new Lenis({
@@ -106,7 +112,7 @@ export function boot() {
     // тема шапки: тёмная сцена / светлая страница ниже
     const f = tToFrame(tSmooth);
     const past = scrollY > top + root.offsetHeight - innerHeight * 0.5;
-    header.dataset.theme = past ? 'page' : (f > 20.6 && f < 28.6 ? 'dark' : 'light');
+    header.dataset.theme = past ? 'page' : (f > legacyFrame(20.6) && f < legacyFrame(28.6) ? 'dark' : 'light');
     const idx = Math.floor(f);
     if (debug && idx !== lastFrameIdx) { lastFrameIdx = idx; }
     if (debug) debug.textContent = `t ${tSmooth.toFixed(3)}  f ${f.toFixed(2)}  ${stage.width}×${stage.height} ${quality}`;

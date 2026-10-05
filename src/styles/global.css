@@ -42,8 +42,8 @@
 :root {
   color-scheme: light;
   --vw: 1vw;
-  /* Масштаб макета: 1479px в Figma = 100vw. Все размеры оверлея через fs() */
-  --fig: calc(100vw / 1479);
+  /* Масштаб макета: 1920px в Figma = 100vw. Все размеры оверлея через fs() */
+  --fig: calc(100vw / 1920);
 }
 html {
   background: var(--color-cream);
@@ -63,7 +63,7 @@ button { font: inherit; color: inherit; }
 
 ::selection { background: var(--color-red); color: #fff; }
 
-/* Единица макета. fs(80) = 80px при ширине 1479, масштабируется с вьюпортом */
+/* Единица макета. fs(80) = 80px при ширине 1920, масштабируется с вьюпортом */
 @utility fs-* {
   font-size: calc(--value(number) * var(--fig));
 }

@@ -11,6 +11,10 @@ import { Renderer, Program, Mesh, Geometry, Texture, type OGLRenderingContext } 
 import { scenes, type LayerDef, type SceneDef } from '../scenes';
 import { REF_W, REF_H, sampleNumber, sampleRect, segment, lerpRect, easings, type Key, type Rect } from '../timeline';
 
+/** Опорный фрейм: десктопный по умолчанию, у мобильных сцен свой (SceneDef.ref) */
+type Ref = readonly [number, number];
+const DESKTOP_REF: Ref = [REF_W, REF_H];
+
 
 const VERT = /* glsl */ `#version 300 es
 precision highp float;
@@ -161,8 +165,9 @@ export class Stage {
       done++;
       this.onProgress?.(done, total);
     };
-    // первая волна: то, что видно на старте
-    const first = list.filter((id) => id.startsWith('s1') || id === 'airship' || id.startsWith('s2'));
+    // первая волна: то, что видно на старте, — первые две локации и аэростат
+    const early = new Set(this.scenes.filter((s) => ['s1', 's2', 'airship'].includes(s.def.id)).flatMap((s) => s.layers.map((l) => l.def.img)));
+    const first = list.filter((id) => early.has(id));
     await Promise.all(first.map(loadOne));
     this.ready = true;
     // остальное — параллельно, по 3 за раз, чтобы не душить сеть
@@ -203,25 +208,25 @@ export class Stage {
   }
 
   /**
-   * Опорный фрейм 1479×832 вписывается в экран по принципу cover.
-   * Возвращает масштаб и смещение так, что (0,0)-(1479,832) покрывает экран.
+   * Опорный фрейм (1920×1080, у мобильных сцен 393×645) вписывается в экран по принципу cover.
+   * Возвращает масштаб и смещение так, что фрейм покрывает экран.
    */
-  refTransform() {
-    const scale = Math.max(this.width / REF_W, this.height / REF_H);
-    return { scale, ox: (this.width - REF_W * scale) / 2, oy: (this.height - REF_H * scale) / 2 };
+  refTransform(ref: Ref = DESKTOP_REF) {
+    const scale = Math.max(this.width / ref[0], this.height / ref[1]);
+    return { scale, ox: (this.width - ref[0] * scale) / 2, oy: (this.height - ref[1] * scale) / 2 };
   }
 
   /** Экранные координаты для точки в пространстве сцены (для DOM-оверлея) */
   projectScene(cam: Rect, x: number, y: number, depth = 0): [number, number, number] {
-    const { scale: s } = this.camTransform(cam, depth);
+    const { scale: s } = this.camTransform(cam, depth, DESKTOP_REF);
     const cx = cam[0] + cam[2] / 2, cy = cam[1] + cam[3] / 2;
     return [(x - cx) * s + this.width / 2, (y - cy) * s + this.height / 2, s];
   }
 
   /** Масштаб экрана для камеры с учётом глубины (параллакс) */
-  private camTransform(cam: Rect, depth: number) {
+  private camTransform(cam: Rect, depth: number, ref: Ref) {
     const base = Math.max(this.width / cam[2], this.height / cam[3]);
-    const zoom = REF_W / cam[2];
+    const zoom = ref[0] / cam[2];
     // ближние слои растут быстрее фона, дальние — медленнее
     const scale = base * Math.pow(zoom, depth * 0.18);
     return { scale, zoom };
@@ -247,15 +252,15 @@ export class Stage {
   }
 
   /** Прямоугольник из пространства сцены (или экрана, если сцены нет) → экран */
-  private project(r: Rect, sceneId: string | undefined, t: number, depth: number): Rect {
+  private project(r: Rect, sceneId: string | undefined, t: number, depth: number, ref: Ref): Rect {
     let out: Rect;
     if (!sceneId) {
-      const { scale, ox, oy } = this.refTransform();
+      const { scale, ox, oy } = this.refTransform(ref);
       out = [ox + r[0] * scale, oy + r[1] * scale, r[2] * scale, r[3] * scale];
     } else {
       const sc = this.scenes.find((s) => s.def.id === sceneId)!.def;
       const cam = sampleRect(sc.cam, t);
-      const { scale } = this.camTransform(cam, depth);
+      const { scale } = this.camTransform(cam, depth, sc.ref ?? DESKTOP_REF);
       const cx = cam[0] + cam[2] / 2, cy = cam[1] + cam[3] / 2;
       const w = r[2] * scale, h = r[3] * scale;
       out = [(r[0] + r[2] / 2 - cx) * scale + this.width / 2 - w / 2, (r[1] + r[3] / 2 - cy) * scale + this.height / 2 - h / 2, w, h];
@@ -264,26 +269,26 @@ export class Stage {
     return [out[0] + dx, out[1] + dy, out[2], out[3]];
   }
 
-  private layerScreenRect(layer: LayerDef, t: number, cam: Rect): Rect {
+  private layerScreenRect(layer: LayerDef, t: number, cam: Rect, ref: Ref): Rect {
     const depth = layer.depth ?? 0;
     const keys = layer.rect as Key<Rect>[];
     // Ключи с привязкой к сценам: соседние ключи проецируем через камеры их сцен и интерполируем
     // уже на экране — объект едет вместе с камерой и передаётся между локациями без скачка.
     if (Array.isArray(keys) && typeof keys[0]?.f === 'number' && keys.some((k) => k.in)) {
       const [a, b, u0] = segment(keys, t);
-      const ra = this.project(a.v, a.in, t, depth);
+      const ra = this.project(a.v, a.in, t, depth, ref);
       if (a === b) return ra;
-      const rb = this.project(b.v, b.in, t, depth);
+      const rb = this.project(b.v, b.in, t, depth, ref);
       return lerpRect(ra, rb, easings[a.ease ?? 'smooth'](u0));
     }
     const r = sampleRect(layer.rect as any, t);
     if (layer.space === 'screen') {
-      const { scale, ox, oy } = this.refTransform();
+      const { scale, ox, oy } = this.refTransform(ref);
       const o: Rect = [ox + r[0] * scale, oy + r[1] * scale, r[2] * scale, r[3] * scale];
       const [dx, dy] = this.parallaxOffset(o, depth);
       return [o[0] + dx, o[1] + dy, o[2], o[3]];
     }
-    const { scale } = this.camTransform(cam, depth);
+    const { scale } = this.camTransform(cam, depth, ref);
     const cx = cam[0] + cam[2] / 2, cy = cam[1] + cam[3] / 2;
     const lx = r[0] + r[2] / 2, ly = r[1] + r[3] / 2;
     const sx = (lx - cx) * scale + this.width / 2;
@@ -292,7 +297,7 @@ export class Stage {
     // компенсируем, слегка растягивая, если слой уже экрана.
     let w = r[2] * scale, h = r[3] * scale;
     let ox = sx - w / 2, oy = sy - h / 2;
-    if (depth === 0 && r[2] === REF_W && r[3] === REF_H) {
+    if (depth === 0 && r[2] === ref[0] && r[3] === ref[1]) {
       const cover = Math.max(this.width / w, this.height / h);
       if (cover > 1) { w *= cover; h *= cover; ox = sx - w / 2; oy = sy - h / 2; }
       // фон никогда не отходит от кромок: ключи камеры из макета могут выходить за кадр на пару px
@@ -337,7 +342,7 @@ export class Stage {
         if (l.def.minWidth && this.width < l.def.minWidth) continue;
         const la = sampleNumber(l.def.alpha, t, 1) * st.alpha;
         if (la <= 0.002) continue;
-        const rect = this.layerScreenRect(l.def, t, st.cam);
+        const rect = this.layerScreenRect(l.def, t, st.cam, s.def.ref ?? DESKTOP_REF);
         // отсечение вне экрана
         if (rect[0] > this.width || rect[1] > this.height || rect[0] + rect[2] < 0 || rect[1] + rect[3] < 0) continue;
         const blur = Math.min(maxBlur, sampleNumber(l.def.blur, t, 0) + st.blur);

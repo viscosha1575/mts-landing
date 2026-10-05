@@ -2,15 +2,42 @@
 import { nav } from '../lib/content';
 ---
 <header id="header" data-theme="light" class="header fixed inset-x-0 top-0 z-30 pointer-events-none">
-  <div class="mx-auto flex items-center justify-between" style="width: calc(1356 * var(--fig)); padding-top: calc(27 * var(--fig));">
-    <a href="#top" class="pointer-events-auto block" aria-label="МТС — на главную" style="width: max(28px, calc(34 * var(--fig))); height: max(28px, calc(34 * var(--fig)));">
-      <img src="/logo.svg" alt="" width="34" height="34" class="size-full" />
+  <div class="mx-auto flex items-center justify-between" style="width: calc(1760 * var(--fig)); padding-top: calc(35 * var(--fig));">
+    <a href="#top" class="pointer-events-auto block" aria-label="МТС — на главную" style="width: max(28px, calc(44 * var(--fig))); height: max(28px, calc(44 * var(--fig)));">
+      <img src="/logo.svg" alt="" width="44" height="44" class="size-full" />
     </a>
-    <nav class="pointer-events-auto flex items-center font-text" style="gap: max(18px, calc(44 * var(--fig))); font-size: max(13px, calc(15.4 * var(--fig)));">
+    <nav class="header__nav pointer-events-auto flex items-center font-text" style="gap: max(18px, calc(58 * var(--fig))); font-size: max(13px, calc(20 * var(--fig))); line-height: 1.3;">
       {nav.map((n) => <a href={n.href} class="nav-link">{n.label}</a>)}
     </nav>
+    <!-- Мобильная шапка макета: поиск и меню вместо пунктов -->
+    <div class="header__tools pointer-events-auto">
+      <button type="button" class="header__btn header__btn--search" aria-label="Открыть поиск">
+        <img src="/icons/search.svg" alt="" width="22.67" height="22.67" />
+      </button>
+      <button type="button" class="header__btn header__btn--menu" aria-label="Открыть меню" aria-expanded="false" aria-controls="header-menu" data-menu-toggle>
+        <img src="/icons/menu.svg" alt="" width="18" height="14" />
+      </button>
+    </div>
   </div>
+  <nav id="header-menu" class="header__menu pointer-events-auto font-text" hidden>
+    {nav.map((n) => <a href={n.href}>{n.label}</a>)}
+  </nav>
 </header>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.getElementById('header-menu');
+  if (toggle && menu) {
+    const set = (open: boolean) => {
+      menu.hidden = !open;
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+    };
+    toggle.addEventListener('click', () => set(menu.hidden));
+    menu.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('a')) set(false); });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
+  }
+</script>
 
 <style>
   .header { color: var(--color-cream); transition: color 0.5s; }
@@ -22,10 +49,26 @@ import { nav } from '../lib/content';
     transform: scaleX(0); transform-origin: right; transition: transform 0.45s var(--ease-out-expo);
   }
   .nav-link:hover::after { transform: scaleX(1); transform-origin: left; }
+  .header__tools, .header__menu { display: none; }
+  /* макет 393: шапка 52 px под статус-баром, поля 20, логотип 32, поиск 32, меню 24, между ними 12 */
   @media (max-width: 767px) {
-    .header > div { width: calc(100% - 40px); padding-top: 18px; }
-    .header a[aria-label] { width: 32px; height: 32px; }
-    nav { gap: 18px; font-size: 13px; }
-    nav a:first-child { display: none; }
+    .header > div { width: calc(100% - 40px); padding-top: 5px; height: 57px; }
+    .header a[aria-label] { width: 32px !important; height: 32px !important; }
+    .header__nav { display: none; }
+    .header__tools { display: flex; align-items: center; gap: 12px; }
+    .header__btn { display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: 0; cursor: pointer; }
+    .header__btn--search { width: 32px; height: 32px; }
+    .header__btn--menu { width: 24px; height: 24px; }
+    /* иконки в макете белые; на светлой странице ниже сцены — тёмные */
+    .header[data-theme='page'] .header__btn img { filter: brightness(0) opacity(0.75); }
+    .header__menu:not([hidden]) {
+      display: flex; flex-direction: column; gap: 4px;
+      position: absolute; right: 20px; top: 57px; min-width: 200px; padding: 10px;
+      border-radius: 12px; background: rgba(255, 255, 255, 0.92); border: 1px solid #fff;
+      backdrop-filter: blur(10px); color: var(--color-ink); font-size: 16px;
+      box-shadow: 0 18px 40px -22px rgba(20, 20, 40, 0.45);
+    }
+    .header__menu a { padding: 10px 12px; border-radius: 8px; }
+    .header__menu a:active { background: rgba(0, 0, 0, 0.06); }
   }
 </style>
