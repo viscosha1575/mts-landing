@@ -1,14 +1,17 @@
 ---
 /**
- * Сцена: липкий вьюпорт с WebGL-канвасом, канвас боке и DOM-оверлей.
- * Высоту секции задаёт app.ts исходя из веса кадров.
+ * Сцена: вьюпорт в экран с WebGL-канвасом, канвасом боке и DOM-оверлеем.
+ * Десктоп и планшет: вьюпорт липкий, секция высотой во весь путь прокрутки (её задаёт app.ts) — кадры идут
+ * за скроллом. Телефон: секция ровно в экран, сцену листает stepper.ts.
  *
  * Оверлей размечен под обе раскадровки. `data-frames` говорит, в какой нумерации заданы
- * data-in / data-out блока: desktop и mobile — кадры своей раскадровки (блок другой раскадровки
- * скрыт), legacy — кадры прежнего макета, оверлей переводит их в текущий таймлайн.
+ * data-in / data-out блока и где он живёт:
+ *  - desktop — номера кадров секции Desktop макета; блок только десктопной раскадровки (локации 01–03);
+ *  - shared  — те же номера; блок показывается в обеих раскадровках (локации 04–08);
+ *  - mobile  — кадры мобильной раскадровки локаций 01–03.
  */
 import { locations } from '../lib/content';
-import { LEGACY_SCALE } from '../lib/timeline';
+import { STOP_AT, holdAt } from '../lib/timeline';
 import Tooltip from './Tooltip.astro';
 
 /**
@@ -16,13 +19,16 @@ import Tooltip from './Tooltip.astro';
  * Короткие предлоги и союзы, а также числа привязываются неразрывным пробелом к следующему слову,
  * как в макете: строка не кончается на «на», «и», «до 30».
  */
+/** Линии связи локации 02: пути узла «линии» кадра 09 в его системе координат 1253×332 */
+const LINKS = ["M390.709 3.27466C390.709 110.723 341.577 212.273 257.326 278.958L211.499 315.231", "M390.709 3.27466C390.709 115.165 416.572 225.541 466.279 325.785L467.514 328.275", "M390.709 3.27466C367.256 112.241 290.812 202.233 187.073 243.001L3.27421 315.231", "M390.705 3.27466C390.705 108.932 445.716 206.967 535.896 262.02L613.277 309.26", "M390.708 3.27466C409.438 107.647 487.12 191.617 589.721 218.399L929.342 307.048", "M390.705 3.27466C437.743 111.185 534.689 189.185 650.169 212.03L1222.06 325.166", "M390.705 3.27466C478.476 115.07 605.243 189.578 745.616 211.878L1470.01 326.956"];
+
 const flow = (s: string) => s
   .replaceAll('-\n', '-').replaceAll('\n', ' ')
   .replace(/(?<=^|[\s(«])(в|во|на|и|а|до|от|с|со|к|о|у|по|за|из|при|для|не|но|их|мы|—)\s+/giu, '$1\u00A0')
   .replace(/(\d)\s+(?=\p{L})/gu, '$1\u00A0');
 ---
 <section id="experience" class="relative" aria-label="Технологии МТС: путешествие по локациям">
-  <div class="exp__view sticky top-0 h-[100svh] overflow-hidden bg-cream">
+  <div class="exp__view sticky top-0 overflow-hidden bg-cream">
     <canvas id="stage" class="absolute inset-0 block size-full"></canvas>
     <canvas id="fx" class="pointer-events-none absolute inset-0 block size-full opacity-0"></canvas>
 
@@ -32,16 +38,44 @@ const flow = (s: string) => s
         <span></span><span></span><span></span><span></span>
       </div>
 
+      <!-- Линии связи от аэростата к домам и технике (кадр 09 макета, узел «линии»): штрихи бегут от аэростата вниз.
+           Место и масштаб задаёт Overlay — линии стоят в пространстве локации 02 и едут с её камерой. -->
+      <svg id="links" class="links pointer-events-none absolute left-0 top-0" viewBox="0 0 1253 332" width="1253" height="332" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="links-fade" gradientUnits="userSpaceOnUse" x1="389" y1="-12" x2="410.4" y2="345.8">
+            <stop stop-color="#fff" stop-opacity="0.42" /><stop offset="0.457" stop-color="#fff" /><stop offset="1" stop-color="#fff" stop-opacity="0.26" />
+          </linearGradient>
+        </defs>
+        {LINKS.map((d) => <path d={d} stroke="url(#links-fade)" stroke-width="1.31" stroke-dasharray="2.62 2.62" />)}
+      </svg>
+
+      <!-- Часы на умной колонке в квартире: поверх цифр картинки, раз в 10 секунд прибавляют минуту.
+           Место, масштаб и яркость задаёт Overlay — часы стоят в пространстве локации 08. -->
+      <div id="clock" class="clock pointer-events-none absolute left-0 top-0" aria-hidden="true">
+        <div class="clock__face"><span data-clock>20:00</span></div>
+      </div>
+
+      <!-- Первый экран: подсказка, пока сцену не начали скроллить -->
+      <div class="hint" data-frames="desktop" data-x="80.44" data-y="540" data-safe data-in="-1" data-out="1.12" data-dir="up" aria-hidden="true">
+        <span>Листайте вниз,<br />чтобы начать</span>
+        <svg viewBox="0 0 35 41" fill="none" stroke="currentColor" stroke-width="3"><path d="M1.5 1.5l16 16 16-16" /><path d="M1.5 23.5l16 16 16-16" /></svg>
+      </div>
+
       {locations.map((loc) => {
-        const k = loc.legacy ? LEGACY_SCALE : 1;
-        const out = loc.titleFrame + (loc.hold ?? 0.9);
+        // текст держится до конца удержания кадра и гаснет сразу за ним, пока камера ещё стоит
+        const out = loc.frame + STOP_AT + 0.02;
+        // Плашки появляются по одной, пока кадр стоит: первая — сразу за заголовком, остальные — через равные
+        // отрезки прокрутки; после последней остаётся четверть удержания, чтобы её прочитать.
+        const count = loc.tooltips.length;
+        const tipAt = (i: number) => holdAt(loc.frame, 0.05 + (0.7 * i) / Math.max(1, count - 1));
+        const tipDur = holdAt(0, 0.09) - holdAt(0, 0);
         return (
-          <div class="loc" data-loc={loc.id} data-frames={loc.legacy ? 'legacy' : 'desktop'}>
+          <div class="loc" data-loc={loc.id} data-frames={loc.mobile ? 'desktop' : 'shared'}>
             <div
               class="loc__title"
               data-x="62.11" data-y="540.65" data-safe
-              data-in={loc.index === 0 ? 0.25 : loc.titleFrame - 0.45} data-out={out} data-dir="up"
-              data-theme={loc.theme}
+              data-in={loc.index === 0 ? 1.2 : loc.frame - 0.5} data-out={out} data-dir="up"
+              data-theme={loc.theme} data-glow={loc.glow}
             >
               <div class="loc__meta" data-reveal>
                 <span class="loc__num">{loc.num}</span>
@@ -51,25 +85,34 @@ const flow = (s: string) => s
               </div>
               <h2 class="loc__h" data-reveal style={`font-size: calc(${loc.titleSize}px * var(--ui, 1)); line-height: calc(${loc.titleLine}px * var(--ui, 1));`}
                 set:html={loc.title.replaceAll('\n', ' <br/>')} />
-              <p class="loc__p" data-reveal style={`width: calc(${loc.textWidth * k}px * var(--ui, 1));`} set:html={loc.text.replaceAll('\n', ' <br/>')} />
+              {loc.text && <p class="loc__p" data-reveal style={`width: calc(${loc.textWidth}px * var(--ui, 1));`} set:html={loc.text.replaceAll('\n', ' <br/>')} />}
               <ul class="loc__chips" data-reveal aria-label="Факты">
                 {loc.tooltips.map((tip) => <li>{tip.title.replaceAll('\n', ' ')}</li>)}
               </ul>
             </div>
-            {loc.tooltips.map((tip) => (
-              <Tooltip tip={tip} type={loc.tip} k={k} fin={loc.titleFrame - 0.2} fout={out - 0.05} style={loc.tooltipStyle} />
-            ))}
+            {loc.tooltips.map((tip, i) => <Tooltip tip={tip} fin={tipAt(i)} dur={tipDur} fout={out} />)}
           </div>
         );
       })}
 
-      <!-- Мобильная раскадровка локаций 01–03: заголовок сверху, по одной плашке на кадр -->
+      <!-- Финал после квартиры: логотип из шапки вырастает в центр кадра (его ведёт Overlay), рядом — слоган.
+           Пустой блок в связке держит место под логотип: по нему считается, куда логотипу прийти. -->
+      <div class="outro" data-frames="shared">
+        <div class="outro__lockup">
+          <span class="outro__slot" data-outro-slot></span>
+          <p class="outro__text" data-in="47.45" data-dir="left">Лидер<br />технологий</p>
+        </div>
+        <img class="outro__logo" data-outro-logo src="/logo.svg" alt="" width="44" height="44" />
+      </div>
+
+      <!-- Мобильная раскадровка: заголовок сверху, по одной плашке на кадр (у квартиры плашек нет) -->
       {locations.filter((loc) => loc.mobile).map((loc) => {
         const m = loc.mobile!;
-        const first = m.tips[0].frame, last = m.tips[m.tips.length - 1].frame;
+        const first = m.tips[0]?.frame ?? m.frame!, last = m.tips[m.tips.length - 1]?.frame ?? m.frame!;
         return (
           <div class="mloc" data-loc={loc.id} data-frames="mobile">
-            <div class="mloc__title" data-mx="21" data-my={m.titleY} data-in={first === 0 ? -1 : first - 0.45} data-out={last + 0.75} data-dir="up">
+            <div class="mloc__title" data-mx="21" data-my={m.titleY} data-in={first === 0 ? -1 : first - 0.45} data-out={last + 0.75} data-dir="up"
+              data-theme={loc.theme} data-glow={m.glow ?? loc.glow}>
               <div class="mloc__meta">
                 <span class="mloc__num">{loc.num}</span>
                 <span class="pager" data-pager aria-hidden="true">
@@ -77,7 +120,7 @@ const flow = (s: string) => s
                 </span>
               </div>
               <h2 class="mloc__h" style={`font-size: calc(${m.titleSize}px * var(--mui, 1));${m.titleWidth ? ` width: calc(${m.titleWidth}px * var(--mui, 1)); white-space: normal;` : ''}`}>{flow(loc.title)}</h2>
-              <p class="mloc__p" style={`width: calc(${m.textWidth}px * var(--mui, 1));`}>{flow(loc.text)}</p>
+              <p class="mloc__p" style={`width: calc(${m.textWidth}px * var(--mui, 1));`}>{flow(loc.text ?? '')}</p>
             </div>
             {m.tips.map((mt) => {
               const tip = loc.tooltips[mt.tip];
@@ -110,17 +153,41 @@ const flow = (s: string) => s
 </section>
 
 <style>
+  .exp__view { height: 100vh; height: 100svh; }
+  /* телефон: сцена листается шагами, высоты под скролл у секции нет */
+  @media (max-width: 767px) { #experience, .exp__view { height: 100vh; height: 100dvh; } }
+
+  /* Свет ламп складывается с картинкой, а не перекрывает её (в макете — plus-lighter): на светлом зале
+     огни светятся, а не лежат тёмно-красными пятнами. screen — для браузеров без plus-lighter. */
+  #fx { mix-blend-mode: screen; mix-blend-mode: plus-lighter; }
+
   .loc__title {
     position: absolute;
     color: var(--color-ink); will-change: transform, opacity;
     max-width: calc(100vw - 40px);
   }
   .loc__title[data-theme='dark'] { color: #fff; }
-  .loc__title[data-theme='dark']::after {
-    content: ''; position: absolute; z-index: -1; left: -30%; top: -35%; width: 150%; height: 170%;
-    background: radial-gradient(ellipse at 40% 50%, rgba(255,255,255,0.16), rgba(255,255,255,0) 60%);
-    pointer-events: none;
+  /* Размытое пятно под текстом, как в макете: чёрный эллипс в дата-центре (кадр 26), светлый клин
+     на городе (кадр 37), тёмно-красный на закате (кадр 41). Размеры — узлы макета с полями под blur. */
+  .loc__title[data-glow]::after {
+    content: ''; position: absolute; z-index: -1; left: 50%; top: 50%; pointer-events: none;
+    width: calc(1500px * var(--ui, 1)); height: calc(800px * var(--ui, 1)); transform: translate(-56%, -50%);
   }
+  .loc__title[data-glow='dark']::after { background: radial-gradient(closest-side, rgba(0,0,0,0.55), rgba(0,0,0,0.3) 45%, rgba(0,0,0,0) 100%); }
+  .loc__title[data-glow='light']::after { background: radial-gradient(closest-side, rgba(255,255,255,0.86), rgba(240,247,253,0.6) 45%, rgba(214,232,246,0) 100%); }
+  .loc__title[data-glow='warm']::after { height: calc(560px * var(--ui, 1)); background: radial-gradient(closest-side, rgba(120,40,40,0.5), rgba(120,40,40,0.24) 50%, rgba(120,40,40,0) 100%); }
+
+  .hint {
+    position: absolute; display: flex; align-items: center; gap: calc(26px * var(--ui, 1));
+    color: #fff; font-family: var(--font-wide); font-weight: 500; white-space: nowrap;
+    font-size: calc(40px * var(--ui, 1)); line-height: 1; will-change: transform, opacity;
+  }
+  .hint svg { width: calc(35px * var(--ui, 1)); height: calc(41px * var(--ui, 1)); overflow: visible; animation: hint 1.8s ease-in-out infinite; }
+  @keyframes hint {
+    0%, 100% { transform: translateY(-3px); }
+    50% { transform: translateY(5px); }
+  }
+  @media (max-width: 1023px) { .hint { display: none; } }
   /* метрики макета 1920: номер 27.733/25.754, точки 9.244 с шагом 27.733, отступы 24.652 */
   .loc__meta { display: flex; align-items: center; gap: calc(20.8px * var(--ui, 1)); margin-bottom: calc(24.652px * var(--ui, 1)); }
   .loc__num { font-family: var(--font-wide); font-weight: 500; color: var(--color-red); font-size: calc(27.733px * var(--ui, 1)); line-height: calc(25.754px * var(--ui, 1)); }
@@ -131,6 +198,43 @@ const flow = (s: string) => s
   .loc__h { font-family: var(--font-wide); font-weight: 500; margin: 0 0 calc(24.652px * var(--ui, 1)); white-space: nowrap; }
   /* переносы заданы в content.ts как в макете — на десктопе строки не ломаем */
   .loc__p { font-family: var(--font-text); font-size: calc(24px * var(--ui, 1)); line-height: 1; margin: 0; white-space: nowrap; }
+
+  /* Финал — кадр 1483 секции «3 итерация» (1479×832, размеры × 1.298): логотип 240, отступ 80, MTS Wide Medium 54/1 */
+  .outro { position: absolute; inset: 0; pointer-events: none; }
+  .outro__lockup {
+    position: absolute; left: calc(50% + 26.6px * var(--ui, 1)); top: calc(50% + 3.9px * var(--ui, 1));
+    transform: translate(-50%, -50%);
+    display: flex; align-items: center; gap: calc(103.85px * var(--ui, 1));
+  }
+  .outro__slot { display: block; flex: none; width: calc(311.56px * var(--ui, 1)); height: calc(311.56px * var(--ui, 1)); }
+  .outro__text {
+    margin: 0; color: #fff; white-space: nowrap; text-transform: uppercase;
+    font-family: var(--font-wide); font-weight: 500; font-size: calc(70.1px * var(--ui, 1)); line-height: 1;
+    will-change: transform, opacity;
+  }
+  .outro__logo { position: absolute; left: 0; top: 0; transform-origin: 0 0; opacity: 0; will-change: transform; }
+  /* на телефоне связка не помещается в строку: логотип над слоганом */
+  @media (max-width: 767px) {
+    .outro__lockup { left: 50%; top: 46%; flex-direction: column; gap: 28px; }
+    .outro__slot { width: 132px; height: 132px; }
+    .outro__text { font-size: 30px; text-align: center; }
+  }
+
+  /* Часы: узел 58×26 px макета вокруг цифр на колонке (они 46×16.5, наклон 5°). Подложка — тот же кусок
+     картинки без нарисованных «20:00» (scripts/bake-figma.py, clock_plate), поверх — своё время. */
+  .clock { transform-origin: 0 0; width: 58px; height: 26px; opacity: 0; will-change: transform, opacity; background: url('/clock-face.png') 0 0 / 100% 100% no-repeat; }
+  .clock__face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transform: translate(0.6px, 0.2px) rotate(5deg); }
+  .clock span {
+    color: #fef7f5; font-family: var(--font-text); font-weight: 400; font-size: 21.5px; line-height: 1;
+    letter-spacing: -0.9px; font-variant-numeric: tabular-nums; text-shadow: 0 0 3px rgba(255, 244, 236, 0.5);
+  }
+  @media (max-width: 767px) { .clock { display: none; } }
+
+  .links { transform-origin: 0 0; opacity: 0; overflow: visible; will-change: transform, opacity; }
+  .links path { animation: links-flow 0.9s linear infinite; }
+  @keyframes links-flow { to { stroke-dashoffset: -5.24; } }
+  @media (max-width: 767px) { .links { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .links path { animation: none; } }
 
   .waves { transform-origin: 0 0; opacity: 0; mix-blend-mode: overlay; }
   .waves span {
@@ -158,6 +262,15 @@ const flow = (s: string) => s
     position: absolute; display: flex; flex-direction: column; align-items: flex-start; gap: calc(8px * var(--mui, 1));
     color: var(--color-ink); will-change: transform, opacity;
   }
+  .mloc__title[data-theme='dark'] { color: #fff; }
+  /* размытое пятно под текстом, как в макете: тёмные эллипсы в дата-центре (кадр 119), светлое на небе города (127) */
+  .mloc__title[data-glow]::after {
+    content: ''; position: absolute; z-index: -1; left: 50%; top: 50%; pointer-events: none;
+    width: calc(620px * var(--mui, 1)); height: calc(380px * var(--mui, 1)); transform: translate(-58%, -50%);
+  }
+  .mloc__title[data-glow='dark']::after { background: radial-gradient(closest-side, rgba(0,0,0,0.6), rgba(0,0,0,0.32) 50%, rgba(0,0,0,0) 100%); }
+  .mloc__title[data-glow='light']::after { background: radial-gradient(closest-side, rgba(255,255,255,0.8), rgba(240,247,253,0.5) 50%, rgba(214,232,246,0) 100%); }
+  .mloc__title[data-glow='warm']::after { background: radial-gradient(closest-side, rgba(90,30,36,0.5), rgba(90,30,36,0.24) 50%, rgba(90,30,36,0) 100%); }
   .mloc__meta { display: flex; align-items: center; gap: calc(20.8px * var(--mui, 1)); }
   .mloc__num { font-family: var(--font-wide); font-weight: 500; color: var(--color-red); font-size: calc(16px * var(--mui, 1)); line-height: calc(25.754px * var(--mui, 1)); }
   .mloc .pager { gap: calc(12px * var(--mui, 1)); }
@@ -189,8 +302,6 @@ const flow = (s: string) => s
   @media (max-width: 767px) {
     .mloc { display: block; }
     .loc[data-frames='desktop'] { display: none; }
-    /* на телефоне сцена листается шагами (stepper.ts): секция ровно в экран, без высоты под скролл */
-    #experience, .exp__view { height: 100vh; height: 100dvh; }
   }
 
   /* Планшеты и телефоны: заголовок прижат к низу, плашки превращаются в чипсы, под текстом — подложка */

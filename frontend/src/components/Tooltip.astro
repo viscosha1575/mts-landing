@@ -2,18 +2,14 @@
 /**
  * Плашка с выноской. Позиция — в координатах макета (data-x/data-y — угол плашки), расставляет Overlay.resize().
  * Выноска — SVG от точки выхода на стороне `side`: прямая длиной `len`, при `turn` — со скруглённым
- * поворотом под прямым углом; на конце точка с кольцом. Все размеры умножаются на --rs (масштаб
- * картинки) и --k (множитель макета локации).
+ * поворотом под прямым углом; на конце точка с кольцом. Все размеры умножаются на --rs (масштаб картинки).
+ * Типографика макета: заголовок MTS Wide Bold 14/1.2, текст MTS Text 14/1.2.
  */
 import type { Tooltip } from '../lib/content';
-interface Props {
-  tip: Tooltip; fin: number; fout: number; style?: 'glass' | 'solid';
-  type: { title: number; text: number; line: number; titleLine?: number };
-  /** множитель координат макета локации (LEGACY_SCALE для прежнего макета) */
-  k?: number;
-}
-const { tip, fin, fout, style = 'glass', type, k = 1 } = Astro.props;
-const unit = (v: number) => `calc(${v}px * var(--rs, 1) * var(--k, 1))`;
+/** fin, fout — кадры появления и ухода; dur — длительность появления в кадрах */
+interface Props { tip: Tooltip; fin: number; dur: number; fout: number }
+const { tip, fin, dur, fout } = Astro.props;
+const unit = (v: number) => `calc(${v}px * var(--rs, 1))`;
 
 const horizontal = tip.side === 'left' || tip.side === 'right';
 const dir = tip.side === 'right' || tip.side === 'bottom' ? 1 : -1;
@@ -35,19 +31,20 @@ const anchor = {
 }[tip.side];
 ---
 <div
-  class:list={['tip', `tip--${style}`]}
-  data-x={tip.x * k} data-y={tip.y * k}
-  data-in={fin + (tip.delay ?? 0)} data-out={fout} data-dir="scale"
-  style={`--k: ${k};`}
+  class="tip"
+  data-x={tip.x} data-y={tip.y}
+  data-in={fin} data-dur={dur} data-out={fout} data-dir="scale"
 >
-  <svg class="tip__line" viewBox="0 0 1 1" style={anchor} aria-hidden="true">
-    <path d={d} fill="none" stroke="currentColor" stroke-width="0.77" />
-    <circle cx={ex} cy={ey} r="2.7" fill="currentColor" />
-    <circle cx={ex} cy={ey} r="5.78" stroke="currentColor" stroke-width="0.77" fill="none" class="tip__ring" />
-  </svg>
+  {L > 0 && (
+    <svg class="tip__line" viewBox="0 0 1 1" style={anchor} aria-hidden="true">
+      <path d={d} fill="none" stroke="currentColor" stroke-width="0.77" />
+      <circle cx={ex} cy={ey} r="2.7" fill="currentColor" />
+      <circle cx={ex} cy={ey} r="5.78" stroke="currentColor" stroke-width="0.77" fill="none" class="tip__ring" />
+    </svg>
+  )}
   <div class="tip__box" style={`width: ${unit(tip.w)};`}>
-    <p class="tip__title" style={`font-size: ${unit(type.title)}; line-height: ${unit(type.titleLine ?? 16.2)};`} set:html={tip.title.replaceAll('\n', '<br/>')} />
-    <p class="tip__text" style={`font-size: ${unit(type.text)}; line-height: ${unit(type.line)};${tip.tw ? ` width: ${unit(tip.tw)};` : ''}`} set:html={tip.text.replaceAll('\n', '<br/>')} />
+    <p class="tip__title" set:html={tip.title.replaceAll('\n', '<br/>')} />
+    <p class="tip__text" set:html={tip.text.replaceAll('\n', '<br/>')} />
   </div>
 </div>
 
@@ -55,7 +52,7 @@ const anchor = {
   .tip {
     position: absolute;
     color: var(--color-cream);
-    --u: calc(1px * var(--rs, 1) * var(--k, 1));
+    --u: calc(1px * var(--rs, 1));
     will-change: transform, opacity;
   }
   .tip__box {
@@ -65,16 +62,14 @@ const anchor = {
     border-radius: calc(12.326 * var(--u));
     padding: calc(18.489 * var(--u));
     color: var(--color-ink);
-    backdrop-filter: blur(6px);
     box-shadow: 0 10px 30px -18px rgba(20, 20, 40, 0.35);
   }
-  .tip--solid .tip__box { background: var(--color-cream); backdrop-filter: none; }
-  /* размеры и интерлиньяж задаются инлайном из content.ts — в Figma они разные по локациям */
   .tip__title {
     font-family: var(--font-wide); font-weight: 700; text-transform: uppercase;
+    font-size: calc(14 * var(--u)); line-height: calc(16.8 * var(--u));
     margin: 0 0 calc(3.081 * var(--u)); white-space: nowrap;
   }
-  .tip__text { font-family: var(--font-text); margin: 0; max-width: none; white-space: nowrap; }
+  .tip__text { font-family: var(--font-text); font-size: calc(14 * var(--u)); line-height: calc(16.8 * var(--u)); margin: 0; max-width: none; white-space: nowrap; }
   /* viewBox 1×1 при размере 1u: координаты пути — прямо в px макета */
   .tip__line { position: absolute; width: var(--u); height: var(--u); overflow: visible; pointer-events: none; }
   .tip__ring { animation: ring 2.4s ease-out infinite; transform-origin: center; transform-box: fill-box; }
