@@ -1,0 +1,11 @@
+# в сборку идут только package*.json, конфиги, public/ и src/
+node_modules
+dist
+.astro
+# исходники картинок (сотни мегабайт): в образ едут готовые WebP из public/img
+assets-src
+scripts
+.DS_Store
+Dockerfile
+.dockerignore
+.gitignore

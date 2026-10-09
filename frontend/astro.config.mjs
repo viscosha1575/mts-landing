@@ -3,7 +3,8 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  site: 'https://example.com',
+  // адрес сайта: в продакшен-сборке приходит из docker-compose.yml (DOMAIN)
+  site: process.env.SITE_URL || 'https://scroll.testforspec.ru',
   output: 'static',
   vite: {
     plugins: [tailwindcss()],

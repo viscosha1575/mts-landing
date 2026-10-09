@@ -1,0 +1,50 @@
+# Продакшен: Traefik принимает 80/443, выпускает сертификат Let's Encrypt и отдаёт фронт (статика за nginx).
+# Настройки — в .env рядом (см. .env.example). Запуск: docker compose up -d --build
+name: mts-scroll
+
+services:
+  traefik:
+    image: traefik:v3.7
+    restart: unless-stopped
+    command:
+      # сервисы берутся из меток контейнеров; без метки traefik.enable=true контейнер наружу не попадает
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      # HTTP целиком уходит на HTTPS
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      # сертификат: проверка TLS-ALPN по 443 порту, ключи и сертификаты — в томе letsencrypt
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL:-}
+      - --ping=true
+      - --log.level=INFO
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        SITE_URL: https://${DOMAIN:?в .env нужен DOMAIN}
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.frontend.entrypoints=websecure
+      - traefik.http.routers.frontend.tls.certresolver=le
+      - traefik.http.services.frontend.loadbalancer.server.port=80
+
+volumes:
+  letsencrypt:
