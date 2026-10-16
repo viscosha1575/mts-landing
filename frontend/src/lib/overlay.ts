@@ -33,13 +33,21 @@ const WAVES_ALPHA: Key<number>[] = MOBILE
  */
 const LINKS_AT: readonly [number, number] = [667.3, 498.7];
 const LINKS_ALPHA: Key<number>[] = [{ f: D(8.7), v: 0 }, { f: D(9), v: 1 }, { f: D(9 + LEAVE_AT), v: 1 }, { f: D(9.9), v: 0 }];
+/** Линии связи на телефоне (кадр «59»): окно svg в кадре без статус-бара; видны на заголовке 02, пока всё стоит */
+const LINKS_M_RECT: Rect = [100, 360, 570, 135];
+const LINKS_M_ALPHA: Key<number>[] = [{ f: 7.7, v: 0 }, { f: 8, v: 1 }, { f: 11, v: 1 }, { f: 11.5, v: 0 }];
 
 /**
- * Часы на колонке в квартире: левый верхний угол узла в пространстве локации 08. Появляются, когда комната
- * уже в фокусе (до того цифры видны нарисованные, размытые вместе с картинкой), и темнеют вместе с ней в финале.
+ * Часы на колонке в квартире: левый верхний угол узла в пространстве локации 08 (на телефоне — колонка на столике
+ * в кадре «75», цифры в перспективе её передней грани, CLOCK_QUAD_M в Experience.astro). В картинке комнаты цифр
+ * нет — грань колонки пустая, поэтому часы стоят на ней всё время, пока видна квартира (заказчик: «числа должны быть
+ * там всегда»): пока комната не в фокусе, размыты вместе с ней, в финале темнеют вместе с ней.
  */
-const CLOCK_AT: readonly [number, number] = [1157, 774];
-const CLOCK_ALPHA: Key<number>[] = [{ f: D(44.2), v: 0 }, { f: D(44.6), v: 1 }];
+// на телефоне цифры на 3.4 px ниже середины верхней части грани — у дизайнера на экране они стояли высоковато
+const CLOCK_AT: readonly [number, number] = MOBILE ? [232.35, 385.73] : [1157, 780];
+const CLOCK_ALPHA: Key<number>[] = MOBILE ? [{ f: M(132) - 0.05, v: 0 }, { f: M(132), v: 1 }] : [{ f: D(41.85), v: 0 }, { f: D(41.9), v: 1 }];
+/** слой комнаты: цифры размыты вместе с ним, пока комната не в фокусе */
+const CLOCK_ROOM = MOBILE ? 'm-s8-room' : 's8-apt';
 /** сколько миллисекунд идёт одна «минута» на часах */
 const CLOCK_TICK = 10000;
 
@@ -54,6 +62,15 @@ const OUTRO_LOGO: Key<Rect>[] = [
   { f: D(47), v: [263.53, 267.42, 272.49, 272.49] },
   { f: D(48), v: [495.9, 388.15, 311.56, 311.56] },
 ];
+
+/**
+ * Мобильные плашки сменяются за прокруткой, а не по времени. На телефоне сцену ведёт палец, и бросок за доли
+ * секунды проходил две-три плашки: включённые по времени, они не успевали появиться и выскакивали (ревью
+ * 2026-10-16: «просвайпываются… просто появляются», «плавнее и с исчезновением, чтобы был понятен процесс скролла»).
+ * Сколько кадров занимают появление плашки и её уход.
+ */
+const MTIP_IN = 0.22;
+const MTIP_OUT = 0.22;
 
 /** с какого кадра активна точка пагинации каждой из восьми локаций */
 const PAGER_BOUNDS = MOBILE
@@ -79,6 +96,7 @@ export class Overlay {
   private mobilePositioned: HTMLElement[];
   private waves: HTMLElement | null;
   private links: HTMLElement | null;
+  private linksM: HTMLElement | null;
   private s2 = scenes.find((s) => s.id === 's2');
   private s8 = scenes.find((s) => s.id === 's8');
   private clock: HTMLElement | null;
@@ -86,6 +104,16 @@ export class Overlay {
   private clockStart = performance.now();
   private clockShown = '';
   private pager: HTMLElement[];
+  /**
+   * Плашки: с какого прогресса каждая показана и с какого её сменяет следующая (на телефоне они стоят на одном
+   * месте). Выезжает и уходит плашка сама, по времени — см. Tooltip.astro. state: 0 — ещё не показана,
+   * 1 — на экране, 2 — уже сменилась.
+   */
+  private tips: { el: HTMLElement; at: number; until: number; state: number }[] = [];
+  /** мобильные плашки: прогресс, на котором они появляются (null — видна с начала) и уходят; что уже выставлено */
+  private mtips: { box: HTMLElement; line: SVGElement; loc: string; in: [number, number] | null; out: [number, number]; shown: string }[] = [];
+  private mui = 1;
+  private still = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   private outroLogo: HTMLElement | null;
   private outroSlot: HTMLElement | null;
   private headerLogo: HTMLElement | null;
@@ -101,9 +129,26 @@ export class Overlay {
     this.mobilePositioned = MOBILE ? [...this.root.querySelectorAll<HTMLElement>('[data-mx]')] : [];
     this.waves = this.root.querySelector('#waves');
     this.links = MOBILE ? null : this.root.querySelector('#links');
-    this.clock = MOBILE ? null : this.root.querySelector('#clock');
+    this.linksM = MOBILE ? this.root.querySelector('#links-m') : null;
+    this.clock = this.root.querySelector('#clock');
     this.clockText = this.clock?.querySelector('[data-clock]') ?? null;
     this.pager = [...document.querySelectorAll<HTMLElement>('[data-pager]')];
+    for (const el of this.root.querySelectorAll<HTMLElement>('[data-show]')) {
+      const conv = frameConverter(el);
+      if (!conv) continue;
+      // отрицательный data-show — «видно с самого начала»
+      const show = +el.dataset.show!, hide = el.dataset.hide;
+      this.tips.push({ el, at: show < 0 ? -1 : frameToT(conv(show)), until: hide === undefined ? Infinity : frameToT(conv(+hide)), state: -1 });
+    }
+    if (MOBILE) for (const el of this.root.querySelectorAll<HTMLElement>('.mtip[data-enter]')) {
+      const enter = +el.dataset.enter!, leave = +el.dataset.leave!;
+      this.mtips.push({
+        box: el.querySelector<HTMLElement>('.mtip__box')!, line: el.querySelector<SVGElement>('.mtip__line')!,
+        loc: el.closest<HTMLElement>('[data-loc]')?.dataset.loc ?? '',
+        in: enter < 0 ? null : [frameToT(enter), frameToT(enter + MTIP_IN)],
+        out: [frameToT(leave - MTIP_OUT), frameToT(leave)], shown: '',
+      });
+    }
     this.outroLogo = this.root.querySelector('[data-outro-logo]');
     this.outroSlot = this.root.querySelector('[data-outro-slot]');
     this.headerLogo = document.querySelector('#header a[aria-label]');
@@ -162,7 +207,9 @@ export class Overlay {
   private resizeMobile() {
     const m = this.stage.refTransform(MOBILE_REF);
     const mui = this.stage.width / MOBILE_REF[0];
+    this.mui = mui;
     this.root.style.setProperty('--mui', String(mui));
+    for (const tip of this.mtips) tip.shown = '';
     for (const el of this.mobilePositioned) {
       const left = +el.dataset.mx! * mui;
       const top = Math.max(60, m.oy + +el.dataset.my! * m.scale);
@@ -221,8 +268,8 @@ export class Overlay {
       const stays = el.dataset.out === undefined;
       const fin = rawIn < 0 ? rawIn : conv(rawIn), fout = stays ? fin : conv(+el.dataset.out!);
       const tIn = frameToT(fin), tOut = frameToT(fout);
-      // длительность появления в кадрах: по умолчанию полкадра, у плашек короче (data-dur)
-      const dIn = Math.max(0.004, frameToT(fin + +(el.dataset.dur ?? 0.5)) - tIn);
+      // появление занимает полкадра
+      const dIn = Math.max(0.004, frameToT(fin + 0.5) - tIn);
       const dOut = Math.max(0.004, frameToT(fout + 0.28) - tOut);
       const dir = el.dataset.dir ?? 'up';
       const from = dir === 'up' ? { y: 26 } : dir === 'left' ? { x: -26 } : { scale: 0.96 };
@@ -239,6 +286,39 @@ export class Overlay {
     return tl;
   }
 
+  /**
+   * Где останавливается сцена на телефоне (Scrubber): по точке на каждую плашку — середина отрезка, на котором
+   * она стоит целиком; у первой плашки сайта — самое начало. loc — локация: между плашками одной локации свайп
+   * листает ровно на одну, между локациями — пролёт за пальцем.
+   */
+  mobileStops(): { t: number; group: string }[] {
+    return this.mtips.map((m) => ({ t: m.in ? (m.in[1] + m.out[0]) / 2 : 0, group: m.loc })).sort((a, b) => a.t - b.t);
+  }
+
+  /**
+   * Мобильные плашки за прокруткой: появляясь, плашка поднимается на место и проявляется, к концу подъезда
+   * тормозит; уходя — разгоняется вверх и гаснет. Выноска проступает, когда плашка почти встала, и гаснет первой.
+   */
+  private updateMobileTips(t: number) {
+    const span = (w: [number, number]) => Math.max(0, Math.min(1, (t - w[0]) / (w[1] - w[0])));
+    for (const tip of this.mtips) {
+      const e = tip.in ? span(tip.in) : 1, x = span(tip.out);
+      const rise = 1 - (1 - e) ** 3, leave = x * x;
+      const alpha = rise * (1 - x);
+      const line = Math.max(0, Math.min(1, (e - 0.6) / 0.4)) * Math.max(0, 1 - x * 2);
+      const y = this.still ? 0 : ((1 - rise) * 18 - leave * 14) * this.mui;
+      const shown = alpha > 0.002 ? `${alpha.toFixed(3)} ${y.toFixed(2)} ${line.toFixed(3)}` : 'off';
+      if (shown === tip.shown) continue;
+      tip.shown = shown;
+      const on = shown !== 'off';
+      tip.box.style.visibility = on ? 'inherit' : '';
+      tip.box.style.opacity = on ? alpha.toFixed(3) : '';
+      tip.box.style.transform = on ? `translate3d(0, ${y.toFixed(2)}px, 0)` : '';
+      tip.line.style.visibility = on && line > 0 ? 'inherit' : '';
+      tip.line.style.opacity = on ? line.toFixed(3) : '';
+    }
+  }
+
   intro() {
     // десктоп: первый экран — кадр 01 с подсказкой, заголовок и плашки приходят с первым шагом;
     // мобильный: кадр 01 уже с заголовком и первой плашкой
@@ -249,6 +329,14 @@ export class Overlay {
   update(t: number, held = true) {
     this.tl.progress(t);
     const f = tToFrame(t);
+    for (const tip of this.tips) {
+      const state = t < tip.at ? 0 : t < tip.until ? 1 : 2;
+      if (state === tip.state) continue;
+      tip.state = state;
+      tip.el.classList.toggle('is-on', state === 1);
+      tip.el.classList.toggle('is-past', state === 2);
+    }
+    if (this.mtips.length) this.updateMobileTips(t);
 
     if (this.outroLogo) {
       const on = t > frameToT(OUTRO_LOGO[0].f);
@@ -286,13 +374,20 @@ export class Overlay {
         this.links.style.transform = `translate3d(${x + fx}px, ${y + fy}px, 0) scale(${k})`;
       }
     }
+    if (this.linksM) {
+      const a = sampleNumber(LINKS_M_ALPHA, t);
+      this.linksM.style.opacity = String(a);
+      if (a > 0) this.place(this.linksM, LINKS_M_RECT);
+    }
     if (this.clock && this.clockText && this.s8) {
       const a = sampleNumber(CLOCK_ALPHA, t);
       this.clock.style.opacity = String(a);
       if (a > 0) {
         const [x, y, k] = this.stage.projectScene(this.s8, t, CLOCK_AT[0], CLOCK_AT[1]);
         this.clock.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${k})`;
-        this.clock.style.filter = `brightness(${1 - sampleNumber(this.s8.dim, t, 0)})`;
+        // размытие комнаты задано в px макета; фильтр стоит до масштаба элемента — в тех же единицах
+        const blur = sampleNumber(this.s8.layers.find((l) => l.id === CLOCK_ROOM)?.blur, t, 0) * 0.5;
+        this.clock.style.filter = `brightness(${1 - sampleNumber(this.s8.dim, t, 0)})${blur > 0.05 ? ` blur(${blur.toFixed(2)}px)` : ''}`;
         // 20:00 и дальше: минута раз в CLOCK_TICK
         const m = (20 * 60 + Math.floor((performance.now() - this.clockStart) / CLOCK_TICK)) % 1440;
         const text = `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;

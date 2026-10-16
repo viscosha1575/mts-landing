@@ -2,7 +2,8 @@
 /**
  * Сцена: вьюпорт в экран с WebGL-канвасом, канвасом боке и DOM-оверлеем.
  * Десктоп и планшет: вьюпорт липкий, секция высотой во весь путь прокрутки (её задаёт app.ts) — кадры идут
- * за скроллом. Телефон: секция ровно в экран, сцену листает stepper.ts.
+ * за скроллом. Телефон: секция ровно в экран, страница под сценой стоит, а путь по сцене палец проходит
+ * виртуально (scrubber.ts).
  *
  * Оверлей размечен под обе раскадровки. `data-frames` говорит, в какой нумерации заданы
  * data-in / data-out блока и где он живёт:
@@ -19,8 +20,39 @@ import Tooltip from './Tooltip.astro';
  * Короткие предлоги и союзы, а также числа привязываются неразрывным пробелом к следующему слову,
  * как в макете: строка не кончается на «на», «и», «до 30».
  */
+/** Линии связи на телефоне: пути узла «линии» кадра «59» дизайнера в координатах кадра 393×852 */
+const LINKS_M = ["M251.802 427.452C251.802 468.134 233.199 506.583 201.3 531.831L183.949 545.565", "M251.802 427.452C251.802 469.816 261.594 511.606 280.414 549.561L280.881 550.503", "M251.802 427.452C242.922 468.709 213.979 502.781 174.701 518.217L105.111 545.565", "M251.8 427.452C251.8 467.456 272.628 504.574 306.772 525.418L336.071 543.304", "M251.801 427.452C258.893 466.969 288.305 498.762 327.152 508.902L455.739 542.467", "M251.8 427.452C269.61 468.309 306.316 497.841 350.038 506.491L566.567 549.326", "M251.8 427.452C285.032 469.78 333.029 497.99 386.177 506.433L660.447 550.004"];
+
 /** Линии связи локации 02: пути узла «линии» кадра 09 в его системе координат 1253×332 */
 const LINKS = ["M390.709 3.27466C390.709 110.723 341.577 212.273 257.326 278.958L211.499 315.231", "M390.709 3.27466C390.709 115.165 416.572 225.541 466.279 325.785L467.514 328.275", "M390.709 3.27466C367.256 112.241 290.812 202.233 187.073 243.001L3.27421 315.231", "M390.705 3.27466C390.705 108.932 445.716 206.967 535.896 262.02L613.277 309.26", "M390.708 3.27466C409.438 107.647 487.12 191.617 589.721 218.399L929.342 307.048", "M390.705 3.27466C437.743 111.185 534.689 189.185 650.169 212.03L1222.06 325.166", "M390.705 3.27466C478.476 115.07 605.243 189.578 745.616 211.878L1470.01 326.956"];
+
+/**
+ * Часы на колонке (кадр 45). Грань колонки видна под углом, и цифры лежат на ней в перспективе: правые выше левых,
+ * верхняя линия наклонена на 3.8°, нижняя на 5°. CLOCK_QUAD — четырёхугольник цифр (углы: левый верхний, правый
+ * верхний, правый нижний, левый нижний) в px макета от точки [1157, 780] (CLOCK_AT в overlay.ts). Снят с прежней
+ * картинки квартиры, где «20:00» было нарисовано на колонке, и пересчитан в кадр макета: в новой картинке комнаты
+ * грань пустая, время пишет только оверлей. Цифры набраны в рамке CLOCK_BOX (её края — края штрихов) и вписаны
+ * в четырёхугольник гомографией.
+ */
+const CLOCK_BOX = [46.6, 14.25];
+const CLOCK_QUAD = [[5.28, 3.47], [51.85, 6.54], [51.85, 21.6], [5.28, 17.56]];
+const quadTransform = ([w, h]: number[], [[x0, y0], [x1, y1], [x2, y2], [x3, y3]]: number[][]) => {
+  const dx1 = x1 - x2, dx2 = x3 - x2, sx = x0 - x1 + x2 - x3;
+  const dy1 = y1 - y2, dy2 = y3 - y2, sy = y0 - y1 + y2 - y3;
+  const det = dx1 * dy2 - dx2 * dy1;
+  const g = (sx * dy2 - dx2 * sy) / det, k = (dx1 * sy - sx * dy1) / det;
+  const m = [(x1 - x0 + g * x1) / w, (y1 - y0 + g * y1) / w, 0, g / w, (x3 - x0 + k * x3) / h, (y3 - y0 + k * y3) / h, 0, k / h, 0, 0, 1, 0, x0, y0, 0, 1];
+  return `matrix3d(${m.map((v) => +v.toFixed(6)).join(', ')})`;
+};
+const clockTransform = quadTransform(CLOCK_BOX, CLOCK_QUAD);
+/**
+ * Телефон (квартира кадра «75»): колонка на столике чуть повёрнута — видна передняя грань в тени и узкая освещённая
+ * боковая. На картинке край крышки идёт вниз вправо на 5.2°, низ грани на 7.1°: рёбра сходятся влево. Цифры —
+ * в верхней части передней грани, по центру, в px макета от точки CLOCK_AT в overlay.ts. Наклон у них положе края
+ * крышки — 4° сверху и 4.5° снизу: с наклоном по рёбрам (6°) надпись на экране читалась заваленной (заказчик).
+ */
+const CLOCK_QUAD_M = [[0, 0], [15.672, 1.096], [15.672, 5.862], [0, 4.629]];
+const clockTransformM = quadTransform(CLOCK_BOX, CLOCK_QUAD_M);
 
 const flow = (s: string) => s
   .replaceAll('-\n', '-').replaceAll('\n', ' ')
@@ -48,11 +80,30 @@ const flow = (s: string) => s
         </defs>
         {LINKS.map((d) => <path d={d} stroke="url(#links-fade)" stroke-width="1.31" stroke-dasharray="2.62 2.62" />)}
       </svg>
+      <!-- Те же линии на телефоне (кадр «59»): штрих тоньше и с белым ореолом, как в макете. Окно — кадр 393×852 -->
+      <svg id="links-m" class="links-m pointer-events-none absolute left-0 top-0" viewBox="100 420 570 135" preserveAspectRatio="none" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="links-m-fade" gradientUnits="userSpaceOnUse" x1="251.155" y1="421.69" x2="259.267" y2="557.131">
+            <stop stop-color="#fff" stop-opacity="0.42" /><stop offset="0.457" stop-color="#fff" /><stop offset="1" stop-color="#fff" stop-opacity="0.26" />
+          </linearGradient>
+          <filter id="links-m-halo" x="90" y="410" width="590" height="155" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="0.5" result="b" />
+            <feComposite in="b" in2="SourceAlpha" operator="out" result="ring" />
+            <feFlood flood-color="#fff" /><feComposite in2="ring" operator="in" result="halo" />
+            <feMerge><feMergeNode in="halo" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        <g opacity="0.7" filter="url(#links-m-halo)">
+          {LINKS_M.map((d) => <path d={d} stroke="url(#links-m-fade)" stroke-width="0.496" stroke-linecap="round" stroke-dasharray="0.99 0.99" />)}
+        </g>
+      </svg>
 
       <!-- Часы на умной колонке в квартире: поверх цифр картинки, раз в 10 секунд прибавляют минуту.
            Место, масштаб и яркость задаёт Overlay — часы стоят в пространстве локации 08. -->
       <div id="clock" class="clock pointer-events-none absolute left-0 top-0" aria-hidden="true">
-        <div class="clock__face"><span data-clock>20:00</span></div>
+        <svg class="clock__digits" viewBox={`0 0 ${CLOCK_BOX[0]} ${CLOCK_BOX[1]}`} width={CLOCK_BOX[0]} height={CLOCK_BOX[1]} style={`transform: ${clockTransform}; --clock-m: ${clockTransformM}`}>
+          <text data-clock x="-0.88" y={CLOCK_BOX[1]} textLength="52.7" transform="scale(0.913 1)">20:00</text>
+        </svg>
       </div>
 
       <!-- Первый экран: подсказка, пока сцену не начали скроллить -->
@@ -68,7 +119,6 @@ const flow = (s: string) => s
         // отрезки прокрутки; после последней остаётся четверть удержания, чтобы её прочитать.
         const count = loc.tooltips.length;
         const tipAt = (i: number) => holdAt(loc.frame, 0.05 + (0.7 * i) / Math.max(1, count - 1));
-        const tipDur = holdAt(0, 0.09) - holdAt(0, 0);
         return (
           <div class="loc" data-loc={loc.id} data-frames={loc.mobile ? 'desktop' : 'shared'}>
             <div
@@ -90,7 +140,7 @@ const flow = (s: string) => s
                 {loc.tooltips.map((tip) => <li>{tip.title.replaceAll('\n', ' ')}</li>)}
               </ul>
             </div>
-            {loc.tooltips.map((tip, i) => <Tooltip tip={tip} fin={tipAt(i)} dur={tipDur} fout={out} />)}
+            {loc.tooltips.map((tip, i) => <Tooltip tip={tip} fin={tipAt(i)} fout={out} />)}
           </div>
         );
       })}
@@ -105,7 +155,10 @@ const flow = (s: string) => s
         <img class="outro__logo" data-outro-logo src="/logo.svg" alt="" width="44" height="44" />
       </div>
 
-      <!-- Мобильная раскадровка: заголовок сверху, по одной плашке на кадр (у квартиры плашек нет) -->
+      <!-- Мобильная раскадровка: заголовок сверху, по одной плашке на кадр (у квартиры плашек нет).
+           Плашки локации стоят на одном месте и сменяют друг друга по ходу прокрутки: у кадра следующей прежняя
+           уходит вверх, новая поднимается на её место — за пальцем, а не по времени (data-enter / data-leave,
+           см. Overlay.updateMobileTips). Последняя гаснет вместе с заголовком. -->
       {locations.filter((loc) => loc.mobile).map((loc) => {
         const m = loc.mobile!;
         const first = m.tips[0]?.frame ?? m.frame!, last = m.tips[m.tips.length - 1]?.frame ?? m.frame!;
@@ -122,13 +175,14 @@ const flow = (s: string) => s
               <h2 class="mloc__h" style={`font-size: calc(${m.titleSize}px * var(--mui, 1));${m.titleWidth ? ` width: calc(${m.titleWidth}px * var(--mui, 1)); white-space: normal;` : ''}`}>{flow(loc.title)}</h2>
               <p class="mloc__p" style={`width: calc(${m.textWidth}px * var(--mui, 1));`}>{flow(loc.text ?? '')}</p>
             </div>
-            {m.tips.map((mt) => {
+            {m.tips.map((mt, i) => {
               const tip = loc.tooltips[mt.tip];
+              const next = m.tips[i + 1];
               return (
                 <div
                   class="mtip"
                   data-mx="21" data-my={m.tipY} data-side={mt.side} data-at={mt.at} data-tx={mt.target[0]} data-ty={mt.target[1]}
-                  data-in={mt.frame === 0 ? -1 : mt.frame - 0.05} data-out={mt.frame + 0.7} data-dir="scale"
+                  data-enter={mt.frame === 0 ? -1 : mt.frame - 0.05} data-leave={next ? next.frame - 0.05 : mt.frame + 0.95}
                 >
                   <!-- путь выноски считает Overlay: её конец привязан к точке сцены -->
                   <svg class="mtip__line" aria-hidden="true">
@@ -154,7 +208,7 @@ const flow = (s: string) => s
 
 <style>
   .exp__view { height: 100vh; height: 100svh; }
-  /* телефон: сцена листается шагами, высоты под скролл у секции нет */
+  /* телефон: страница под сценой не прокручивается, высоты под скролл у секции нет */
   @media (max-width: 767px) { #experience, .exp__view { height: 100vh; height: 100dvh; } }
 
   /* Свет ламп складывается с картинкой, а не перекрывает её (в макете — plus-lighter): на светлом зале
@@ -220,21 +274,25 @@ const flow = (s: string) => s
     .outro__text { font-size: 30px; text-align: center; }
   }
 
-  /* Часы: узел 58×26 px макета вокруг цифр на колонке (они 46×16.5, наклон 5°). Подложка — тот же кусок
-     картинки без нарисованных «20:00» (scripts/bake-figma.py, clock_plate), поверх — своё время. */
-  .clock { transform-origin: 0 0; width: 58px; height: 26px; opacity: 0; will-change: transform, opacity; background: url('/clock-face.png') 0 0 / 100% 100% no-repeat; }
-  .clock__face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transform: translate(0.6px, 0.2px) rotate(5deg); }
-  .clock span {
-    color: #fef7f5; font-family: var(--font-text); font-weight: 400; font-size: 21.5px; line-height: 1;
-    letter-spacing: -0.9px; font-variant-numeric: tabular-nums; text-shadow: 0 0 3px rgba(255, 244, 236, 0.5);
-  }
-  @media (max-width: 767px) { .clock { display: none; } }
+  /* Часы: узел 58×26 px макета вокруг цифр на колонке; сами цифры — SVG, вписанный в грань колонки в перспективе. */
+  .clock { transform-origin: 0 0; width: 58px; height: 26px; opacity: 0; will-change: transform, opacity; }
+  /* Цифры — гротеск, как были нарисованы в макете: высота цифры Helvetica и Arial 0.716 em, при 19.9 px это высота
+     рамки. Знаки у́же обычных (сжаты до 0.913 ширины) и стоят реже — шаг возвращает textLength. Края слегка размыты:
+     чёткий текст поверх картинки выглядел бы наклейкой. */
+  .clock__digits { position: absolute; left: 0; top: 0; overflow: visible; transform-origin: 0 0; filter: blur(0.3px) drop-shadow(0 0 1px rgba(255, 238, 230, 0.18)); }
+  .clock__digits text { fill: #f6f1f0; font: 400 19.9px 'Helvetica Neue', Helvetica, Arial, sans-serif; font-variant-numeric: tabular-nums; }
+  /* телефон: своя колонка — свой четырёхугольник цифр (CLOCK_QUAD_M) */
+  @media (max-width: 767px) { .clock__digits { transform: var(--clock-m) !important; } }
 
   .links { transform-origin: 0 0; opacity: 0; overflow: visible; will-change: transform, opacity; }
   .links path { animation: links-flow 0.9s linear infinite; }
   @keyframes links-flow { to { stroke-dashoffset: -5.24; } }
   @media (max-width: 767px) { .links { display: none; } }
-  @media (prefers-reduced-motion: reduce) { .links path { animation: none; } }
+  .links-m { opacity: 0; overflow: visible; will-change: transform, opacity; }
+  .links-m path { animation: links-m-flow 0.9s linear infinite; }
+  @keyframes links-m-flow { to { stroke-dashoffset: -1.98; } }
+  @media (min-width: 768px) { .links-m { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .links path, .links-m path { animation: none; } }
 
   .waves { transform-origin: 0 0; opacity: 0; mix-blend-mode: overlay; }
   .waves span {
@@ -286,7 +344,12 @@ const flow = (s: string) => s
     border-radius: calc(12px * var(--mui, 1));
     padding: calc(18.489px * var(--mui, 1));
     color: var(--color-ink);
+    will-change: transform, opacity;
   }
+  /* Смена плашек идёт за пальцем (Overlay.updateMobileTips): прежняя уходит вверх и гаснет, следующая поднимается
+     снизу и проявляется, выноска проступает, когда плашка почти встала; назад — то же в обратную сторону.
+     Пока плашки не видно, её нет и для скринридера. */
+  .mtip__box, .mtip__line { opacity: 0; visibility: hidden; }
   .mtip__title {
     font-family: var(--font-wide); font-weight: 700; text-transform: uppercase;
     font-size: calc(10.785px * var(--mui, 1)); line-height: calc(16.203px * var(--mui, 1));

@@ -49,6 +49,8 @@ const M_LAMPS: Light[] = [
   [358.8, 120.8, 11, 11], [308.8, 8.8, 10, 10], [350.8, 2.8, 10, 10], [373.2, 33.5, 10, 10], [385.8, 168.8, 11, 11], [359.7, 215.3, 11, 11],
 ];
 const MOBILE = VARIANT === 'mobile';
+/** картинка центра на телефоне в кадре-заголовке (m-s3-lab в scenes.ts) */
+const M_LAB_HOME: Rect = [-2, -60, 397, 705];
 
 /**
  * Зал гаснет до черноты, лампы остаются. Потом, в темноте, они уходят из фокуса, расплываются в боке
@@ -56,7 +58,8 @@ const MOBILE = VARIANT === 'mobile';
  * Зал дата-центра проступает из темноты позже, когда его огни уже горят.
  */
 const ALPHA_LAMPS: Key<number>[] = MOBILE
-  ? [{ f: M(113) + 0.2, v: 0 }, { f: M(114), v: 1 }, { f: M(116) + 0.2, v: 1 }, { f: M(117) + 0.3, v: 0 }]
+  // на телефоне лампы горят уже на заголовке — как на десктопе и в кадре «64» дизайнера
+  ? [{ f: 16.2, v: 0 }, { f: 17, v: 1 }, { f: M(116) + 0.2, v: 1 }, { f: M(117) + 0.3, v: 0 }]
   : [{ f: F(16.2), v: 0 }, { f: F(17), v: 1 }, { f: F(22.1), v: 1 }, { f: F(23.3), v: 0 }];
 /** на свету лампы светят вполсилы, в темноте — в полную */
 const GAIN_LAMPS: Key<number>[] = MOBILE ? [{ f: M(113) + 0.3, v: 0.8 }, { f: M(114) + 0.8, v: 1 }] : [{ f: F(19.4), v: 0.8 }, { f: F(21), v: 1 }];
@@ -65,12 +68,11 @@ const SPREAD_LAMPS: Key<number>[] = MOBILE ? [{ f: M(116), v: 1 }, { f: M(117) +
 const ALPHA_REDS: Key<number>[] = [{ f: F(22.4), v: 0 }, { f: F(23.5), v: 1 }, { f: F(26.8), v: 1 }, { f: F(27.4), v: 0 }];
 
 /**
- * Улица 07: дым из труб завода и фонари вдоль дороги. Точки — в кадре-заголовке на дальнем плане (слой s7-fg,
- * узел [0, 389, 1920×814]). Видны, пока улица стоит во весь кадр: до неё перед камерой проходит фасад,
- * после — в кадр входит рама окна квартиры, а огни оверлея лежат поверх всего.
+ * Улица 07: фонари вдоль дороги (дым над трубами и фонарики у дома — слои сцены, scenes.ts). Точки — в кадре-заголовке
+ * на дальнем плане (слой s7-fg, узел [0, 389, 1920×814]). Видны, пока улица стоит во весь кадр: до неё перед камерой
+ * проходит фасад, после — в кадр входит рама окна квартиры, а огни оверлея лежат поверх всего.
  */
 const STREET_AT: Rect = [0, 389, 1920, 814];
-const CHIMNEYS: [number, number][] = [[888, 505], [926, 530], [963, 562], [1000, 596]];
 const STREET_LAMPS: [number, number][] = [[80, 733], [262, 740], [390, 735], [588, 708], [640, 753], [822, 742], [857, 708], [935, 707], [1005, 712], [1036, 738]];
 const ALPHA_STREET: Key<number>[] = [{ f: F(40.95), v: 0 }, { f: F(41.15), v: 1 }, { f: F(41.65), v: 1 }, { f: F(41.88), v: 0 }];
 
@@ -89,7 +91,8 @@ export class Bokeh {
 
   resize() {
     this.dpr = Math.min(devicePixelRatio || 1, 2);
-    this.w = innerWidth; this.h = innerHeight;
+    // размер — как у сцены: на телефоне это её вьюпорт, а не окно (см. Stage.resize)
+    this.w = this.stage.width; this.h = this.stage.height;
     this.canvas.width = Math.round(this.w * this.dpr);
     this.canvas.height = Math.round(this.h * this.dpr);
     this.canvas.style.width = `${this.w}px`;
@@ -128,6 +131,17 @@ export class Bokeh {
     ctx.restore();
   }
 
+  /**
+   * Точка картинки центра на телефоне → экран. Там центр приближается не камерой, а треком своего слоя (отъезд
+   * от стола в кадрах 15–17), и лампы, загорающиеся на этом отъезде, идут за слоем.
+   */
+  private onMobileLab(t: number, lx: number, ly: number): [number, number, number] {
+    const r = this.stage.screenRectOf('s3', 'm-s3-lab', t);
+    if (!r) return this.stage.projectScene(this.s3, t, lx, ly);
+    const k = r[2] / M_LAB_HOME[2];
+    return [r[0] + (lx - M_LAB_HOME[0]) * k, r[1] + (ly - M_LAB_HOME[1]) * k, k];
+  }
+
   update(t: number) {
     const aLamps = sampleNumber(ALPHA_LAMPS, t), aReds = MOBILE ? 0 : sampleNumber(ALPHA_REDS, t);
     const aStreet = MOBILE ? 0 : sampleNumber(ALPHA_STREET, t);
@@ -146,12 +160,13 @@ export class Bokeh {
     if (aLamps > 0.001) {
       const gain = sampleNumber(GAIN_LAMPS, t), spread = sampleNumber(SPREAD_LAMPS, t);
       (MOBILE ? M_LAMPS : LAMPS).forEach(([lx, ly, w, h, rot = 0], i) => {
-        // все лампы слегка дышат; часть трековых спотов (у них нет отражения в полу) заметно мерцает
-        const blinks = !MOBILE && i >= 12 && i % 3 === 0;
+        // все лампы слегка дышат; часть трековых спотов (у них нет отражения в полу) заметно мерцает,
+        // на телефоне — две подвесные лампочки из шести
+        const blinks = MOBILE ? i === 1 || i === 4 : i >= 12 && i % 3 === 0;
         const flicker = blinks
           ? 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(time * (0.9 + (i % 5) * 0.31) + i * 2.1)) ** 2 * (Math.sin(time * 9.3 + i) > -0.92 ? 1 : 0.35)
           : 0.92 + 0.08 * Math.sin(time * (1.4 + (i % 5) * 0.37) + i * 1.7);
-        const [x, y, s] = this.stage.projectScene(this.s3, t, lx, ly);
+        const [x, y, s] = MOBILE ? this.onMobileLab(t, lx, ly) : this.stage.projectScene(this.s3, t, lx, ly);
         this.glow(x, y, w * s * spread, h * s * spread, rot, aLamps * gain * flicker);
       });
     }
@@ -169,24 +184,15 @@ export class Bokeh {
       if (r) {
         const k = r[2] / STREET_AT[2];
         const at = (px: number, py: number): [number, number] => [r[0] + (px - STREET_AT[0]) * k, r[1] + (py - STREET_AT[1]) * k];
-        // дым: клубы поднимаются над трубой, растут, уходят по ветру и тают
-        CHIMNEYS.forEach(([cx, cy], e) => {
-          for (let n = 0; n < 7; n++) {
-            const age = (time * 0.065 + n / 7 + e * 0.37) % 1;
-            const [x, y] = at(cx + age * (44 + e * 8) + Math.sin(age * 6 + e * 1.9) * 4, cy - age * 60);
-            const rad = (4 + age * 20) * k, a = aStreet * 0.085 * Math.sin(Math.PI * age) ** 0.7 * (1 - age * 0.35);
-            const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
-            g.addColorStop(0, `rgba(235,180,160,${a})`); g.addColorStop(0.6, `rgba(225,165,150,${a * 0.5})`); g.addColorStop(1, 'rgba(220,160,150,0)');
-            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
-          }
-        });
-        // фонари: ореол слегка дышит у всех, три фонаря моргают сериями
+        // Фонари «дышат»: каждый в своём ритме (круг 4.5–6.5 с) плавно разгорается — ореол ярче и шире —
+        // и возвращается к тусклому. Три фонаря ещё и моргают сериями.
         STREET_LAMPS.forEach(([lx, ly], i) => {
           const [x, y] = at(lx, ly);
           const faulty = i === 2 || i === 5 || i === 8;
           const burst = Math.sin(time * 0.5 + i * 1.3) > 0.35;
-          const level = faulty && burst ? (Math.sin(time * 17 + i) + Math.sin(time * 9.7 + i * 3) > 0.2 ? 1 : 0.05) : 0.32 + 0.1 * Math.sin(time * (1.1 + i * 0.13) + i);
-          const rad = (faulty ? 17 : 13) * k, a = aStreet * level;
+          const wave = 0.5 - 0.5 * Math.cos((time / (4.5 + (i % 5) * 0.5) + i * 0.37) * Math.PI * 2), breath = wave * wave * (3 - 2 * wave);
+          const level = faulty && burst ? (Math.sin(time * 17 + i) + Math.sin(time * 9.7 + i * 3) > 0.2 ? 1 : 0.05) : 0.24 + 0.4 * breath;
+          const rad = (faulty ? 17 : 13) * (1 + 0.35 * breath) * k, a = aStreet * level;
           const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
           g.addColorStop(0, `rgba(255,214,150,${a * 0.9})`); g.addColorStop(0.35, `rgba(255,170,70,${a * 0.45})`); g.addColorStop(1, 'rgba(255,150,40,0)');
           ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();

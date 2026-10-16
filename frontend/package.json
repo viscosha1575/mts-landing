@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "images": "node scripts/build-images.mjs"
+    "images": "node scripts/build-images.mjs",
+    "video": "node scripts/build-video.mjs"
   },
   "dependencies": {
     "astro": "^7.3.1",

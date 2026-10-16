@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 ssh "$HOST" "mkdir -p '$REMOTE_DIR'"
 # .env на сервере свой — не трогаем; исходники картинок и локальные сборки на сервере не нужны
 rsync -az --delete \
-  --exclude .git --exclude .claude --exclude .env --exclude .DS_Store --exclude '*.pdf' \
+  --exclude .git --exclude .claude --exclude .env --exclude .DS_Store --exclude '*.pdf' --exclude '*.apk' --exclude '*.xapk' \
   --exclude node_modules --exclude dist --exclude .astro \
   --exclude frontend/assets-src \
   ./ "$HOST:$REMOTE_DIR/"
